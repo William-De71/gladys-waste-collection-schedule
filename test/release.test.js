@@ -409,20 +409,20 @@ test('a starter 0.1.0 section is dated at the first release, never regenerated',
   assert.equal(updateChangelog(dated, release), dated, 'idempotent');
 });
 
-test('the real CHANGELOG.md: its 0.1.0 starter section is dated by the first release', async () => {
-  const text = await readFile(changelogPath, 'utf8');
-  assert.match(text, /^## \[0\.1\.0\] - unreleased$/m, 'starter section written with the project');
-  assert.doesNotMatch(text, /^## \[Unreleased\]/m);
-  const release = {
-    version: '0.1.0',
-    previous: null,
-    date: '2026-10-14',
-    commits: [],
-    repoUrl: REPO,
-  };
+// Valid at every point of the history: before the first release (the starter
+// section "unreleased") and after any release (a dated section).
+test('the real CHANGELOG.md: a section for the current version, a release run again changes nothing', async () => {
+  const [text, pkg] = await Promise.all([
+    readFile(changelogPath, 'utf8'),
+    readFile(path('package.json'), 'utf8'),
+  ]);
+  const { version } = JSON.parse(pkg);
+  const escaped = version.replaceAll('.', '\\.');
+  assert.match(text, new RegExp(`^## \\[${escaped}\\] - (unreleased|\\d{4}-\\d{2}-\\d{2})$`, 'm'));
+  assert.doesNotMatch(text, /^## \[Unreleased\]/m, 'never edited by hand');
+  const release = { version, previous: null, date: '2026-10-14', commits: [], repoUrl: REPO };
   const dated = updateChangelog(text, release);
-  assert.match(dated, /^## \[0\.1\.0\] - 2026-10-14$/m);
-  assert.equal(releaseNotes(dated, '0.1.0'), releaseNotes(text, '0.1.0'));
+  assert.equal(releaseNotes(dated, version), releaseNotes(text, version), 'notes kept');
   assert.equal(updateChangelog(dated, release), dated, 'idempotent');
   await assertPrettierClean(dated, changelogPath);
 });
