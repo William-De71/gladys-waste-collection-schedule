@@ -1,0 +1,123 @@
+# -----------------------------------------------------------------------------
+# Follow the releases of Waste Collection Schedule (the Python library of the
+# sources): every week, when upstream published a new release, open a pull
+# request that moves the Dockerfile to it (version and archive checksum
+# together), once the new image builds and every source imports.
+#
+#   weekly ──> latest upstream release > Dockerfile? ──> new checksum
+#     ──> docker build + smoke test ──> branch + pull request
+#     "feat(sources): update Waste Collection Schedule to X.Y.Z"
+#
+# Merging it publishes a minor release of the integration (new sources, fixed
+# sources). Dependabot cannot do this: the library is not a package.
+#
+# Two settings of the repository are needed (README, "Release process"):
+#   - Settings → Actions → General → "Allow GitHub Actions to create and
+#     approve pull requests";
+#   - a pull request opened with GITHUB_TOKEN starts no workflow: close and
+#     reopen it to run the CI before merging.
+# -----------------------------------------------------------------------------
+name: Waste Collection Schedule update
+
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: wcs-update
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the update branch
+      pull-requests: write # open the pull request
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Compare with the latest upstream release
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          current="$(sed -n 's/^ARG WCS_VERSION=//p' Dockerfile)"
+          latest="$(gh api repos/mampfes/hacs_waste_collection_schedule/releases/latest --jq .tag_name)"
+          latest="${latest#v}"
+          echo "Current: ${current}, latest: ${latest}"
+          if [ "$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n1)" = "$current" ]; then
+            echo "Up to date (${current})." >> "$GITHUB_STEP_SUMMARY"
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          branch="wcs/${latest}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "The branch ${branch} already exists: its pull request is waiting." >> "$GITHUB_STEP_SUMMARY"
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          sha="$(curl -fsSL "https://github.com/mampfes/hacs_waste_collection_schedule/archive/refs/tags/v${latest}.tar.gz" | sha256sum | cut -d' ' -f1)"
+          sed -i "s/^ARG WCS_VERSION=.*/ARG WCS_VERSION=${latest}/; s/^ARG WCS_SHA256=.*/ARG WCS_SHA256=${sha}/" Dockerfile
+          {
+            echo "update=true"
+            echo "current=${current}"
+            echo "latest=${latest}"
+            echo "branch=${branch}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.update == 'true'
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build the image
+        if: steps.check.outputs.update == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: gladys-waste-collection-schedule:update
+
+      - name: Smoke test (every source imports)
+        if: steps.check.outputs.update == 'true'
+        run: |
+          set -euo pipefail
+          docker run --rm --read-only --memory 256m --network none --user node \
+            --tmpfs /data:uid=1000,gid=1000 \
+            -v "$PWD/python/check_sources.py:/tmp/check_sources.py:ro" \
+            --entrypoint /opt/venv/bin/python gladys-waste-collection-schedule:update \
+            -I /tmp/check_sources.py | tee check.txt
+
+      - name: Open the pull request
+        if: steps.check.outputs.update == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT: ${{ steps.check.outputs.current }}
+          LATEST: ${{ steps.check.outputs.latest }}
+          BRANCH: ${{ steps.check.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add Dockerfile
+          git commit -m "feat(sources): update Waste Collection Schedule to ${LATEST}"
+          git push origin "$BRANCH"
+          body="$(cat <<EOF
+          Waste Collection Schedule ${CURRENT} → ${LATEST}: [release notes](https://github.com/mampfes/hacs_waste_collection_schedule/releases/tag/v${LATEST}).
+
+          The image builds and the smoke test passed: $(head -n1 check.txt).
+
+          A pull request opened by GitHub Actions starts no workflow: **close and reopen it** to run the CI, then merge (a minor release of the integration).
+          EOF
+          )"
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pulls" \
+            -f title="feat(sources): update Waste Collection Schedule to ${LATEST}" \
+            -f head="$BRANCH" -f base="${GITHUB_REF_NAME}" -f body="$body" --jq .html_url \
+            | tee -a "$GITHUB_STEP_SUMMARY"

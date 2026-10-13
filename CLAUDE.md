@@ -1,0 +1,106 @@
+# CLAUDE.md
+
+Project rules for coding assistants (Claude Code reads this file) and for human
+contributors.
+
+## What this is
+
+A Gladys Assistant **external integration** for waste collection dates: a
+Node.js service (Node 22+, ESM, no build step) in its own sandboxed Docker
+container, talking to Gladys through
+[`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js).
+The dates come from the Python library
+[Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule)
+(MIT, nearly 1,000 sources), pinned in the Dockerfile and run unchanged by
+`python/bridge.py`, one short process per request. Cloud only.
+
+**One image, two store integrations**: this repository (`type: "device"`) and
+[gladys-waste-collection-calendar](https://github.com/William-De71/gladys-waste-collection-calendar)
+(`type: "calendar"`, its manifest follows the releases of this one). The
+container finds its mode on each connection: `getCalendarAccounts()` answers a
+calendar integration and refuses (403) a device one.
+
+## Commands
+
+```bash
+npm install
+npm test                                  # node --test, never touches the network
+node --test test/app.test.js              # one file
+node --test --test-name-pattern "widget"  # tests whose name matches
+npm run lint                              # ESLint
+npm run format:check                      # Prettier, as the CI runs it
+npm run format                            # Prettier, fix in place
+npx github:GladysAssistant/integration-store . --skip-image-check
+scripts/dev-setup.sh                      # pinned library + venv in .wcs/
+docs/illustrations/render.sh              # widget illustrations (Chrome, ImageMagick, Pillow)
+scripts/build-cover.sh                    # cover.jpg from cover.svg (Inkscape, ImageMagick)
+```
+
+## Architecture
+
+```
+index.js                     SDK wiring only: createApp(gladys, { bridge, store }) + connect
+src/app.js                   every handler, the one-minute tick, the mode (device/calendar)
+src/bridge.js                spawns python/bridge.py: one process at a time, timeout, minimal env
+python/bridge.py             fetch / search / version over stdin-stdout JSON
+python/check_sources.py      smoke test: every bundled source imports (CI, wcs-update.yml)
+src/config.js                config_schema -> slots (source, JSON or key=value arguments), renames
+src/schedule.js              collections: window, renames, hidden types, next ones, type keys
+src/store.js                 /data/state.json: raw dates per slot, errors, reminders fired
+src/devices.js               device mode: one device per slot, days per waste type
+src/calendar.js              calendar mode: one calendar per slot and user, windows of 500 events
+src/events.js                reminders (collection_tomorrow / waste_type_tomorrow / collection_today)
+src/widgets.js               the `upcoming` widget (pure, reused by docs/illustrations/gen.mjs)
+src/bins.js                  waste type -> family -> color and bin pictogram (pngjs)
+src/i18n.js                  runtime texts in en / fr / de / es
+src/time.js                  calendar dates in the timezone of the house (TZ)
+.github/scripts/release.mjs  version, changelog, version files, PR title checks
+```
+
+## Rules
+
+- **External ids are forever**: `gladys.externalIds('schedule', slot)`, feature
+  keys `next_days`, `next_types`, `type_<typeKey(type)>`; calendar and event ids
+  `ext:<selector>:<user>:schedule-<slot>` and `…:s<slot>:<date>:<typeKey>`.
+  Config, action, widget, trigger, field, variable and output keys too. Per
+  feature, `category`, `type`, `unit`, `min`, `max` and `step` are compared by
+  the "Update" button of the Discover screen: change them only with a
+  migration note in the docs.
+- **Polling**: `should_poll: false`; the tick fetches every `refresh_hours`
+  and publishes at midnight (Gladys polls at most once a minute).
+- **States**: `publishChangedStates` (6 h heartbeat), only for the features the
+  user created; everything again in `onDeviceCreated`, then
+  `requestWidgetRefresh`.
+- **Scene events** on transitions only, flat scalar data; `fetch_failed`
+  never after a refresh asked by a scene action (loop risk).
+- **The engine**: never pass the Gladys token or anything from the config but
+  the source and its arguments to Python. One process at a time (256 MB for
+  Node and Python together). A new Python import of a source = a line in
+  `python/requirements.txt` (the CI smoke test catches it).
+- **Upstream library**: update it only through `wcs-update.yml` (version and
+  archive checksum together in the Dockerfile).
+- **The container rootfs is read-only**: the only writable folder is /data
+  (state file, TMPDIR and HOME of Python).
+- **Widget content**: after any change, run `docs/illustrations/render.sh` and
+  look at the four images; card dates are `YYYY-MM-DDT00:00:00.000Z` (shown
+  as a calendar day by the Gladys front).
+- **User-facing text** exists in en, fr, de and es: manifest, `src/i18n.js`,
+  `docs/*.md`, `README*.md`. `test/i18n.test.js` checks it. Use the words of
+  the Gladys UI (Discover / Découverte / Entdecken / Descubrir…).
+- **Versions belong to the Release workflow**: never edit `version` in
+  `package.json`, `package-lock.json` or the manifest, nor the `docker_image`
+  tag.
+- **Changelog**: Ne jamais éditer CHANGELOG.md à la main, il est généré à la
+  release. Écris le titre de PR comme la ligne que l'utilisateur lira.
+- **Style**: Prettier formats, ESLint catches mistakes. Comments explain why,
+  in English. Tests never touch the network.
+
+## Pitfalls
+
+- The calendar API answers 403 to a device integration: that is the mode
+  detection, not an error.
+- A card `date` other than midnight UTC is shown with a time by the Gladys
+  front.
+- Feature names are not shown when a feature is alone of its type: devices are
+  named after their schedule.
+- Waste types have no identifier upstream: a renamed type is a new feature.

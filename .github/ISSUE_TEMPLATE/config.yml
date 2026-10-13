@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: A missing or broken source (town, waste operator)
+    url: https://github.com/mampfes/hacs_waste_collection_schedule/issues
+    about: The sources come from Waste Collection Schedule; they are added and fixed there.
+  - name: Gladys community forum (French and English)
+    url: https://community.gladysassistant.com/c/developpement/
+    about: Questions, setup help and feedback from other users.
+  - name: Security problem
+    url: https://github.com/William-De71/gladys-waste-collection-schedule/security/advisories/new
+    about: Report a vulnerability privately, never in a public issue.

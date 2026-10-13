@@ -1,0 +1,7 @@
+{
+  "Neverland": [
+    { "title": "Springfield", "module": "fake_town", "default_params": { "city": "Springfield" }, "id": "fake_town" },
+    { "title": "Shelbyville", "module": "fake_town", "default_params": { "city": "Shelbyville" }, "id": "fake_town" },
+    { "title": "Springfield Recycling Center", "module": "fake_town", "default_params": {}, "id": "fake_town" }
+  ]
+}

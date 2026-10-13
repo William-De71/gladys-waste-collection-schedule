@@ -1,0 +1,8 @@
+node_modules/
+package-lock.json
+/data/
+*.log
+test/fixtures/python-lib/
+docs/illustrations/out/
+.github/forum-*.md
+/.wcs/

@@ -1,0 +1,12 @@
+gladys-waste-collection-schedule
+Copyright 2026 William-De71
+
+This product includes software developed by William-De71
+(https://github.com/William-De71/gladys-waste-collection-schedule), licensed
+under the Apache License, Version 2.0.
+
+The Docker image bundles Waste Collection Schedule
+(https://github.com/mampfes/hacs_waste_collection_schedule), Copyright (c) 2020
+Steffen Zimmermann, licensed under the MIT License. Its license ships in the
+image at /app/python/lib/LICENSE. This project is not affiliated with Waste
+Collection Schedule nor with the waste operators its sources read.

@@ -1,0 +1,37 @@
+# -----------------------------------------------------------------------------
+# Dependabot: update pull requests, checked by the CI like any other.
+#
+#   - npm, weekly: the Gladys SDK first of all (new device categories and
+#     features arrive through it); the development tools share one PR;
+#   - pip, weekly: the Python packages the sources import
+#     (python/requirements.txt), in one PR;
+#   - GitHub Actions, monthly.
+#
+# Waste Collection Schedule itself is not a package: wcs-update.yml opens the
+# PR of each new upstream release. The Docker base image is left out on
+# purpose: `node:24-trixie-slim` is a moving tag, pulled fresh by every
+# release build, and moving to the next Node or Debian major is a deliberate
+# change (Dockerfile, CI matrix and `engines` together).
+# -----------------------------------------------------------------------------
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: pip
+    directory: /python
+    schedule:
+      interval: weekly
+    groups:
+      python-packages:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

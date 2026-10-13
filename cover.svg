@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="534" viewBox="0 0 800 534">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b5e3b"/>
+      <stop offset="1" stop-color="#0f3d2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="534" fill="url(#bg)"/>
+  <!-- A calendar page behind the bins -->
+  <g transform="translate(470 78)">
+    <rect width="250" height="230" rx="18" fill="#ffffff" opacity=".96"/>
+    <rect width="250" height="56" rx="18" fill="#e9f3ec"/>
+    <rect y="38" width="250" height="18" fill="#e9f3ec"/>
+    <circle cx="62" cy="10" r="8" fill="#2f353b"/>
+    <circle cx="188" cy="10" r="8" fill="#2f353b"/>
+    <g fill="#d6dde3">
+      <rect x="24" y="80" width="28" height="22" rx="4"/><rect x="66" y="80" width="28" height="22" rx="4"/>
+      <rect x="108" y="80" width="28" height="22" rx="4"/><rect x="150" y="80" width="28" height="22" rx="4"/>
+      <rect x="192" y="80" width="28" height="22" rx="4"/>
+      <rect x="24" y="116" width="28" height="22" rx="4"/><rect x="108" y="116" width="28" height="22" rx="4"/>
+      <rect x="150" y="116" width="28" height="22" rx="4"/><rect x="192" y="116" width="28" height="22" rx="4"/>
+      <rect x="24" y="152" width="28" height="22" rx="4"/><rect x="66" y="152" width="28" height="22" rx="4"/>
+      <rect x="108" y="152" width="28" height="22" rx="4"/><rect x="192" y="152" width="28" height="22" rx="4"/>
+      <rect x="24" y="188" width="28" height="22" rx="4"/><rect x="66" y="188" width="28" height="22" rx="4"/>
+      <rect x="150" y="188" width="28" height="22" rx="4"/>
+    </g>
+    <rect x="66" y="116" width="28" height="22" rx="4" fill="#f2c01f"/>
+    <rect x="150" y="152" width="28" height="22" rx="4" fill="#209678"/>
+    <rect x="108" y="188" width="28" height="22" rx="4" fill="#2979d6"/>
+    <rect x="192" y="188" width="28" height="22" rx="4" fill="#606870"/>
+  </g>
+  <!-- Bins: the colors of the widget pictograms (src/bins.js) -->
+  <g transform="translate(60 150) scale(1.5625)">
+    <rect x="36" y="13" width="24" height="3" fill="#2f353b"/>
+    <rect x="36" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="57" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="14" y="18" width="68" height="9" rx="1.5" fill="#bd961a"/>
+    <path d="M20 27 H76 L68 80 H28 Z" fill="#f2c01f"/>
+    <rect x="34.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="46.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="58.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <circle cx="30" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="66" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="30" cy="83" r="3" fill="#f2c01f"/>
+    <circle cx="66" cy="83" r="3" fill="#f2c01f"/>
+  </g>
+  <g transform="translate(180 150) scale(1.5625)">
+    <rect x="36" y="13" width="24" height="3" fill="#2f353b"/>
+    <rect x="36" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="57" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="14" y="18" width="68" height="9" rx="1.5" fill="#205ea7"/>
+    <path d="M20 27 H76 L68 80 H28 Z" fill="#2979d6"/>
+    <rect x="34.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="46.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="58.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <circle cx="30" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="66" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="30" cy="83" r="3" fill="#2979d6"/>
+    <circle cx="66" cy="83" r="3" fill="#2979d6"/>
+  </g>
+  <g transform="translate(300 150) scale(1.5625)">
+    <rect x="36" y="13" width="24" height="3" fill="#2f353b"/>
+    <rect x="36" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="57" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="14" y="18" width="68" height="9" rx="1.5" fill="#19755e"/>
+    <path d="M20 27 H76 L68 80 H28 Z" fill="#209678"/>
+    <rect x="34.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="46.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="58.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <circle cx="30" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="66" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="30" cy="83" r="3" fill="#209678"/>
+    <circle cx="66" cy="83" r="3" fill="#209678"/>
+  </g>
+  <g transform="translate(400 205) scale(1.4583)">
+    <rect x="36" y="13" width="24" height="3" fill="#2f353b"/>
+    <rect x="36" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="57" y="13" width="3" height="6" fill="#2f353b"/>
+    <rect x="14" y="18" width="68" height="9" rx="1.5" fill="#4b5157"/>
+    <path d="M20 27 H76 L68 80 H28 Z" fill="#606870"/>
+    <rect x="34.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="46.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <rect x="58.5" y="36" width="3" height="36" rx="1.5" fill="#2f353b" opacity=".75"/>
+    <circle cx="30" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="66" cy="83" r="7" fill="#2f353b"/>
+    <circle cx="30" cy="83" r="3" fill="#606870"/>
+    <circle cx="66" cy="83" r="3" fill="#606870"/>
+  </g>
+  <text x="70" y="420" font-family="Inter, 'DejaVu Sans', Arial, sans-serif" font-size="46" font-weight="700" fill="#ffffff">Waste Collection Schedule</text>
+  <text x="72" y="468" font-family="Inter, 'DejaVu Sans', Arial, sans-serif" font-size="24" fill="#cfe8d8">for Gladys Assistant · reminders · calendar</text>
+</svg>
