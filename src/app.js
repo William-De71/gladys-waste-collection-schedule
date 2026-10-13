@@ -5,6 +5,10 @@
 // schedule for every user who enabled it (calendar.js), the `upcoming`
 // widget, the scene triggers and actions, the configuration buttons.
 //
+// Each schedule is named after its house of Gladys (`location: true`: the
+// names come from GET /house, read at connection and at each configuration
+// change, there is no house event).
+//
 // A one-minute tick drives everything: it fetches the schedules that are due
 // (every `refresh_hours`, sooner after a configuration change, with a growing
 // delay after a failure), publishes the new day at midnight and fires the
@@ -18,7 +22,7 @@ import { BridgeError } from './bridge.js';
 import { createCalendarSync } from './calendar.js';
 import { normalizeConfig } from './config.js';
 import { dueReminders, fetchFailedData, TRIGGERS } from './events.js';
-import { pick, t, text, truncate } from './i18n.js';
+import { LANGUAGES, pick, t, text, truncate } from './i18n.js';
 import { cleanCollections, scheduleName, upcomingDays } from './schedule.js';
 import { localClock } from './time.js';
 import { ALL, buildUpcomingWidget, relativeDay, WIDGET_ACTIONS, WIDGET_KEY } from './widgets.js';
@@ -58,10 +62,50 @@ export function createApp(
   let lastConnection = null;
   let lastWidgetRefresh = 0;
   let pendingWidgetRefresh = null;
+  let houses = [];
   const images = new Map();
 
   const clock = () => localClock(now(), timeZone);
   const currentDay = () => clock().date;
+
+  // --- Names ----------------------------------------------------------------------
+
+  const loadHouses = async () => {
+    try {
+      const list = await gladys.getHouses();
+      houses = Array.isArray(list) ? list : [];
+    } catch (error) {
+      // Keep the last known names: a schedule must not lose its name over a glitch.
+      logger.warn(`houses: ${error.message}`);
+    }
+  };
+
+  /** What fetched the dates of a slot, for the messages: the title found, else what the user typed. */
+  const sourceLabel = (slot) =>
+    store.slot(slot.slot).title || slot.source || slot.address.city || slot.address.url || '';
+
+  /**
+   * Name each slot after its house (else its former free name). Two slots of
+   * the same house (the town for most bins, an ICS link for glass) get their
+   * source in brackets, so the calendars and the widget tell them apart.
+   */
+  const applyNames = () => {
+    for (const slot of config.slots) {
+      const house = slot.house && houses.find((candidate) => candidate.selector === slot.house);
+      slot.name = house?.name || slot.legacyName || null;
+    }
+    const counts = new Map();
+    for (const slot of config.slots) {
+      if (slot.name) {
+        counts.set(slot.name, (counts.get(slot.name) ?? 0) + 1);
+      }
+    }
+    for (const slot of config.slots) {
+      if (slot.name && counts.get(slot.name) > 1) {
+        slot.name = `${slot.name} (${sourceLabel(slot) || slot.slot})`;
+      }
+    }
+  };
 
   // --- Views of the schedules ------------------------------------------------
 
@@ -75,7 +119,7 @@ export function createApp(
       return {
         slot: slot.slot,
         name: scheduleName(slot, language),
-        source: slot.source,
+        source: sourceLabel(slot),
         title: record.title,
         collections: collectionsOf(slot),
         error: record.error,
@@ -96,14 +140,40 @@ export function createApp(
       };
     });
 
+  /** The name of a parameter as the form shows it, else as the source names it. */
+  const paramLabel = (param) => {
+    const key = FIELD_MESSAGES[param.field];
+    if (key) {
+      return t(key);
+    }
+    const label = param.label ?? { en: param.name };
+    return t('fieldAdvanced', { label, name: param.name });
+  };
+
   const errorMessage = (error, slot) => {
     switch (error?.kind) {
       case 'not_found':
-      case 'module':
         return t('errorNotFound', { source: slot?.source ?? '' });
       case 'json':
         return t('errorBadJson');
+      case 'no_source':
+        return error.query ? t('errorNoSource', { query: error.query }) : t('errorNoTown');
+      case 'ambiguous':
+        return t('errorAmbiguous', {
+          query: error.query ?? '',
+          list: (error.suggestions ?? []).join(', '),
+        });
+      case 'missing':
+        return joinWith((error.missing ?? []).map(paramLabel), ', ', (list) =>
+          t('errorMissing', { source: slot ? sourceLabel(slot) : '', list }),
+        );
       case 'bad_args':
+        if (error.field || error.label) {
+          return t('errorValue', {
+            field: FIELD_MESSAGES[error.field] ? t(FIELD_MESSAGES[error.field]) : error.label,
+            error: error.error,
+          });
+        }
         return t('errorBadArgs', { error: error.error });
       case 'timeout':
         return t('errorTimeout');
@@ -126,7 +196,12 @@ export function createApp(
       result = { ok: false, kind: slot.configError, error: slot.configError };
     } else {
       try {
-        result = await bridge.fetch(slot.source, slot.args);
+        result = await bridge.fetch({
+          source: slot.source,
+          country: slot.country,
+          address: slot.address,
+          args: slot.args,
+        });
       } catch (error) {
         result = {
           ok: false,
@@ -141,7 +216,9 @@ export function createApp(
 
     if (result?.ok) {
       const raw = result.collections.slice(0, MAX_RAW);
-      logger.info(`schedule ${slot.slot} (${slot.source}): ${raw.length} collections`);
+      logger.info(
+        `schedule ${slot.slot} (${result.module ?? slot.source}): ${raw.length} collections`,
+      );
       return store.updateSlot(slot.slot, {
         signature: slot.signature,
         title: typeof result.title === 'string' ? result.title : null,
@@ -157,10 +234,14 @@ export function createApp(
       kind: result?.kind ?? 'engine',
       error: truncate(result?.error ?? 'unknown error', 500),
       argument: result?.argument ?? null,
+      field: result?.field ?? null,
+      label: result?.label ?? null,
+      query: result?.query ?? null,
+      missing: Array.isArray(result?.missing) ? result.missing.slice(0, 10) : null,
       suggestions: Array.isArray(result?.suggestions) ? result.suggestions.slice(0, 20) : null,
       since: before.error?.since ?? attempt,
     };
-    logger.warn(`schedule ${slot.slot} (${slot.source}): ${error.kind}: ${error.error}`);
+    logger.warn(`schedule ${slot.slot} (${sourceLabel(slot)}): ${error.kind}: ${error.error}`);
     // Data fetched with other arguments (another town) are worse than none.
     const sameSource = before.signature === slot.signature;
     const record = store.updateSlot(slot.slot, {
@@ -177,7 +258,7 @@ export function createApp(
         gladys.publishSceneEvent(
           TRIGGERS.FETCH_FAILED,
           fetchFailedData(
-            { ...slot, name: scheduleName(slot, config.language) },
+            { ...slot, name: scheduleName(slot, config.language), source: sourceLabel(slot) },
             pick(errorMessage(error, slot), config.language),
           ),
         ),
@@ -275,6 +356,8 @@ export function createApp(
   };
 
   const publishAll = async () => {
+    // A fetch may have found the title that tells two slots of one house apart.
+    applyNames();
     if (!gladys.connected) {
       return;
     }
@@ -362,9 +445,16 @@ export function createApp(
               name,
               error: errorMessage(record.error, slot),
             });
-            if (record.error.argument && record.error.suggestions?.length) {
+            if (
+              record.error.kind === 'bad_args' &&
+              record.error.argument &&
+              record.error.suggestions?.length
+            ) {
+              const field = FIELD_MESSAGES[record.error.field];
               line += ` (${text('testSuggestions', language, {
-                argument: record.error.argument,
+                argument: field
+                  ? text(field, language)
+                  : (pick(record.error.label, language) ?? record.error.argument),
                 list: record.error.suggestions.slice(0, 10).join(', '),
               })})`;
             }
@@ -409,27 +499,35 @@ export function createApp(
         : t('searchHeaderAll', { total: answer.total });
     const items = answer.results.map((result) => {
       const given = new Set(Object.keys(result.default_params ?? {}));
-      const missing = (result.params ?? [])
-        .filter((param) => param.required && !given.has(param.name))
-        .map((param) => param.name);
-      const item = Object.fromEntries(
+      const params = (result.params ?? []).filter((param) => !given.has(param.name));
+      // Several parameters may be one field (street and street_name): once.
+      const labels = (required) => {
+        const seen = new Set();
+        return params
+          .filter((param) => param.required === required)
+          .map(paramLabel)
+          .filter((label) => !seen.has(label.en) && seen.add(label.en));
+      };
+      const required = labels(true);
+      const optional = labels(false);
+      return Object.fromEntries(
         Object.keys(header).map((language) => {
-          const more = missing.length
-            ? text('searchMore', language, { params: missing.join(', ') })
-            : '';
+          const list = (labels) => labels.map((label) => pick(label, language)).join(', ');
           const line = text('searchItem', language, {
             title: result.title,
             country: result.country,
-            module: result.module,
-            args: JSON.stringify(result.default_params ?? {}),
-            more,
+            required: required.length
+              ? text('searchRequired', language, { params: list(required) })
+              : '',
+            optional: optional.length
+              ? text('searchOptional', language, { params: list(optional) })
+              : '',
           });
           return [language, result.docs_url ? `${line}\n  ${result.docs_url}` : line];
         }),
       );
-      return item;
     });
-    return joinMessages([header, ...items]);
+    return joinMessages([header, ...items, t('searchHint')]);
   };
 
   // --- Handlers ------------------------------------------------------------------------
@@ -437,6 +535,7 @@ export function createApp(
   gladys.on('connected', async () => {
     config = normalizeConfig(gladys.config ?? {});
     dropRemovedSlots();
+    await loadHouses();
     logger.info(`connected, ${config.slots.length} schedule(s)`);
     lastConnection = null;
     // Calendars may have changed while disconnected: push everything again.
@@ -448,6 +547,8 @@ export function createApp(
   gladys.onConfigUpdated(async (raw) => {
     config = normalizeConfig(raw ?? {});
     dropRemovedSlots();
+    // A house may have been added or renamed since the connection.
+    await loadHouses();
     // Names, renames or schedules changed: publish now, the tick fetches.
     await publishAll();
     tick();
@@ -588,6 +689,34 @@ export function createApp(
     /** For the tests: what the next collection is. */
     nextCollection: (wasteType) => nextCollection(config.slots, wasteType),
   };
+}
+
+// The form field of each kind of parameter (python/bridge.py FIELD_PARAMS).
+const FIELD_MESSAGES = {
+  city: 'fieldCity',
+  postcode: 'fieldPostcode',
+  street: 'fieldStreet',
+  number: 'fieldNumber',
+  address: 'fieldAddress',
+  url: 'fieldUrl',
+  insee: 'fieldInsee',
+};
+
+/**
+ * @description Join multi-language parts into one, then wrap it in a message.
+ * @param {object[]} parts - `{ en, fr, ... }` objects.
+ * @param {string} separator - Between two parts.
+ * @param {Function} wrap - `(joined) => message`.
+ * @returns {object} The message.
+ */
+function joinWith(parts, separator, wrap) {
+  const joined = Object.fromEntries(
+    LANGUAGES.map((language) => [
+      language,
+      parts.map((part) => pick(part, language)).join(separator),
+    ]),
+  );
+  return wrap(joined);
 }
 
 /**

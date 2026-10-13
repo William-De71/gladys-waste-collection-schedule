@@ -45,7 +45,7 @@ flowchart LR
   P -- HTTPS --> Sources
 ```
 
-A one-minute tick fetches the schedules that are due (one short Python process each, one at a time), pushes the calendars of every user who enabled the integration, refreshes the widget at midnight and fires the reminders.
+A one-minute tick fetches the schedules that are due (one short Python process each, one at a time), pushes the calendars of every user who enabled the integration, refreshes the widget at midnight and fires the reminders. For each schedule, `python/bridge.py` first finds the source: a module name as is, otherwise the entries of the library in the chosen country, the exact title first, then the titles starting with it, then the titles containing every word (searched with Source, or else with Town); a tie between different sources is an "ambiguous" error listing them, never a guess. It then gives the address fields to the parameters of the source that mean the same thing (`FIELD_PARAMS`, exact names), the advanced parameters last. A French source asking for an INSEE code gets it from geo.api.gouv.fr with the town and the postcode.
 
 ```mermaid
 sequenceDiagram
@@ -54,7 +54,7 @@ sequenceDiagram
   participant I as Integration
   participant P as bridge.py
   participant S as Source
-  U->>G: configures source + arguments
+  U->>G: chooses house + country, fills in the address
   G->>I: config-updated
   I->>P: {"command": "fetch", ...}
   P->>S: HTTPS request
@@ -74,7 +74,7 @@ One calendar per schedule ("Waste collection – Home", in the language of each 
 
 ## Transport
 
-**Cloud only** (`"transports": ["cloud"]`): every source is a web site or an API on the internet, asked from your Gladys every 12 hours by default. The catalog shows the cloud badge; there is no "Prefer the local connection" button (single channel). Your address, or what your source needs (a street, a house number, a calendar link), is sent to that source and to nobody else; nothing goes through a Gladys server.
+**Cloud only** (`"transports": ["cloud"]`): every source is a web site or an API on the internet, asked from your Gladys every 12 hours by default. The catalog shows the cloud badge; there is no "Prefer the local connection" button (single channel). Your address, or what your source needs (a street, a house number, a calendar link), is sent to that source and to nobody else; nothing goes through a Gladys server. For the few French sources asking for an INSEE code, the town and the postcode (never the street) are sent to geo.api.gouv.fr, the public geographic API of the French State. The `location` permission lets the integration read the houses of Gladys (`GET /house`) for their name only: the coordinates come with them but are not used.
 
 ## Widget
 
@@ -118,19 +118,27 @@ A reminder fires once per collection, even across restarts, up to 3 hours late i
 
 ## Configuration
 
-| Field                   | Type   | Default | Meaning                                                                                             |
-| ----------------------- | ------ | ------- | --------------------------------------------------------------------------------------------------- |
-| `name_1` … `name_3`     | string |         | name of the schedule (calendar, widget, scenes)                                                     |
-| `source_1` … `source_3` | string |         | Waste Collection Schedule source, e.g. `ics`, `opendata_bordeauxmetropole_fr` (schedule 1 required) |
-| `args_1` … `args_3`     | string |         | arguments: JSON object or `key=value; key=value`                                                    |
-| `rename`                | string |         | `Original=New; …`                                                                                   |
-| `hide`                  | string |         | `Type; Type`                                                                                        |
-| `reminder_time`         | select | `19:00` | evening reminder, 16:00 to 22:00 or `off`                                                           |
-| `morning_time`          | select | `06:00` | morning reminder, 05:00 to 10:00 or `off`                                                           |
-| `refresh_hours`         | select | `12`    | update every 6, 12 or 24 hours                                                                      |
-| `language`              | select | `en`    | language of the texts sent to scenes (default names, errors)                                        |
+| Field                       | Type   | Default | Meaning                                                                                                                        |
+| --------------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `house_1` … `house_3`       | select |         | house of Gladys (`source: "houses"`): names the calendar and the widget; two schedules of one house get the source in brackets |
+| `country_1` … `country_3`   | select |         | country of the library, where the source is searched                                                                           |
+| `city_1` … `city_3`         | string |         | Town: finds the source when Source is empty, and fills its town parameter                                                      |
+| `postcode_1` … `postcode_3` | string |         | Postcode                                                                                                                       |
+| `street_1` … `street_3`     | string |         | Street                                                                                                                         |
+| `number_1` … `number_3`     | string |         | Number                                                                                                                         |
+| `source_1` … `source_3`     | string |         | Source (optional): title of a source or module name, e.g. `Grand Besançon Métropole`; empty, found from the town               |
+| `url_1` … `url_3`           | string |         | ICS link (optional): alone, the `ics` source                                                                                   |
+| `args_1` … `args_3`         | string |         | Advanced parameters: `key=value; key=value` (JSON still read); they win over the fields above                                  |
+| `rename`                    | string |         | `Original=New; …`                                                                                                              |
+| `hide`                      | string |         | `Type; Type`                                                                                                                   |
+| `reminder_time`             | select | `19:00` | evening reminder, 16:00 to 22:00 or `off`                                                                                      |
+| `morning_time`              | select | `06:00` | morning reminder, 05:00 to 10:00 or `off`                                                                                      |
+| `refresh_hours`             | select | `12`    | update every 6, 12 or 24 hours                                                                                                 |
+| `language`                  | select | `en`    | language of the texts sent to scenes (default names, errors)                                                                   |
 
-Buttons of the configuration page: **Find a source** (search by town, operator or country: source, known arguments, arguments to fill in, documentation link) and **Test the schedules** (asks every source now and shows what it returned, or the error with the suggestions of the source).
+`name_1` … `name_3` left the form for the house; an older configuration still names its schedules with it.
+
+Buttons of the configuration page: **Find a source** (search by town, operator or country: what each source needs, with the labels of the form, and its name for Source when the town is not enough) and **Test the schedules** (asks every source now and shows what it returned, or what is wrong: a missing value, several possible sources, the suggestions of the source).
 
 ## Usage
 
@@ -152,15 +160,16 @@ WCS_PYTHON=.wcs/venv/bin/python WCS_LIB_DIR=.wcs/lib WCS_DATA_DIR=.wcs/data \
   DEBUG=gladys-integration-sdk node index.js
 ```
 
-| Variable       | Default            | Use                                               |
-| -------------- | ------------------ | ------------------------------------------------- |
-| `WCS_PYTHON`   | `python3`          | Python interpreter with the requirements          |
-| `WCS_LIB_DIR`  | `/app/python/lib`  | folder of the `waste_collection_schedule` package |
-| `WCS_BRIDGE`   | `python/bridge.py` | the bridge script                                 |
-| `WCS_DATA_DIR` | `/data`            | state file and temporary files                    |
-| `WCS_DEBUG`    | unset              | debug logs of the sources (stderr)                |
+| Variable       | Default                   | Use                                                      |
+| -------------- | ------------------------- | -------------------------------------------------------- |
+| `WCS_PYTHON`   | `python3`                 | Python interpreter with the requirements                 |
+| `WCS_LIB_DIR`  | `/app/python/lib`         | folder of the `waste_collection_schedule` package        |
+| `WCS_BRIDGE`   | `python/bridge.py`        | the bridge script                                        |
+| `WCS_DATA_DIR` | `/data`                   | state file and temporary files                           |
+| `WCS_DEBUG`    | unset                     | debug logs of the sources (stderr)                       |
+| `WCS_GEO_API`  | `https://geo.api.gouv.fr` | INSEE code lookup (the tests point it at a local server) |
 
-Try one source directly: `echo '{"command": "fetch", "source": "ics", "args": {"url": "…"}}' | WCS_LIB_DIR=.wcs/lib .wcs/venv/bin/python -I python/bridge.py`.
+Try one address directly: `echo '{"command": "fetch", "country": "France", "address": {"city": "Bordeaux", "street": "Cours Pasteur", "number": "20"}}' | WCS_LIB_DIR=.wcs/lib .wcs/venv/bin/python -I python/bridge.py`.
 
 | Script                            | What it does                            |
 | --------------------------------- | --------------------------------------- |
@@ -200,7 +209,11 @@ flowchart LR
 
 ## Troubleshooting
 
-- **Test the schedules** explains most problems: unknown source, invalid argument (with the suggestions of the source), source down.
+- **Test the schedules** explains most problems, schedule by schedule.
+- **No source found**: check the country, or write the name of your waste operator (given by **Find a source**) in Source (optional).
+- **Several sources match**: copy the right one, as listed, into Source (optional).
+- **A value is missing**: the message names the field to fill in; a parameter without a field goes into Advanced parameters as `key=value`.
+- **INSEE code**: town not found or several towns with that name: add the Postcode.
 - A source broken here is usually broken in Home Assistant too: check, then report it to [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues).
 - A calendar is empty: check **Synchronize this calendar** in **My calendars**.
 - Logs: the Logs tab of the integration; `DEBUG=gladys-integration-sdk` for the SDK details.

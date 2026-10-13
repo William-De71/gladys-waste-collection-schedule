@@ -45,7 +45,7 @@ flowchart LR
   P -- HTTPS --> Sources
 ```
 
-Ein Takt im Minutenabstand fragt die fälligen Abfuhrpläne ab (je ein kurzer Python-Prozess, einer nach dem anderen), überträgt die Kalender jedes Benutzers, der die Integration aktiviert hat, aktualisiert das Widget um Mitternacht und löst die Erinnerungen aus.
+Ein Takt im Minutenabstand fragt die fälligen Abfuhrpläne ab (je ein kurzer Python-Prozess, einer nach dem anderen), überträgt die Kalender jedes Benutzers, der die Integration aktiviert hat, aktualisiert das Widget um Mitternacht und löst die Erinnerungen aus. Für jeden Abfuhrplan findet `python/bridge.py` zuerst die Quelle: einen Modulnamen unverändert, sonst die Einträge der Bibliothek im gewählten Land, zuerst den exakten Titel, dann die Titel, die damit beginnen, dann die, die alle Wörter enthalten (gesucht mit Quelle, sonst mit Ort); ein Gleichstand zwischen verschiedenen Quellen ist ein Fehler „ambiguous“, der sie auflistet, nie eine Vermutung. Dann gibt es die Adressfelder an die gleichbedeutenden Parameter der Quelle weiter (`FIELD_PARAMS`, exakte Namen), die erweiterten Parameter zuletzt. Eine französische Quelle, die einen INSEE-Code verlangt, erhält ihn von geo.api.gouv.fr anhand von Ort und Postleitzahl.
 
 ```mermaid
 sequenceDiagram
@@ -54,7 +54,7 @@ sequenceDiagram
   participant I as Integration
   participant P as bridge.py
   participant S as Quelle
-  U->>G: richtet Quelle + Argumente ein
+  U->>G: wählt Haus + Land, gibt die Adresse ein
   G->>I: config-updated
   I->>P: {"command": "fetch", ...}
   P->>S: HTTPS-Anfrage
@@ -74,7 +74,7 @@ Ein Kalender pro Abfuhrplan („Müllabfuhr – Zuhause“, in der Sprache jedes
 
 ## Transport
 
-**Nur Cloud** (`"transports": ["cloud"]`): Jede Quelle ist eine Website oder eine API im Internet, die standardmäßig alle 12 Stunden von Ihrem Gladys aus abgefragt wird. Der Katalog zeigt das Cloud-Abzeichen; es gibt keine Schaltfläche „Lokale Verbindung bevorzugen“ (nur ein Kanal). Ihre Adresse, oder was Ihre Quelle braucht (Straße, Hausnummer, Kalenderlink), geht an diese Quelle und an niemanden sonst; nichts läuft über einen Gladys-Server.
+**Nur Cloud** (`"transports": ["cloud"]`): Jede Quelle ist eine Website oder eine API im Internet, die standardmäßig alle 12 Stunden von Ihrem Gladys aus abgefragt wird. Der Katalog zeigt das Cloud-Abzeichen; es gibt keine Schaltfläche „Lokale Verbindung bevorzugen“ (nur ein Kanal). Ihre Adresse, oder was Ihre Quelle braucht (Straße, Hausnummer, Kalenderlink), geht an diese Quelle und an niemanden sonst; nichts läuft über einen Gladys-Server. Für die wenigen französischen Quellen, die einen INSEE-Code verlangen, gehen Ort und Postleitzahl (nie die Straße) an geo.api.gouv.fr, die öffentliche Geo-API des französischen Staates. Die Berechtigung `location` erlaubt der Integration, die Häuser von Gladys zu lesen (`GET /house`), nur für ihren Namen: Die Koordinaten kommen mit, werden aber nicht verwendet.
 
 ## Widget
 
@@ -118,19 +118,27 @@ Eine Erinnerung kommt einmal pro Abholung, auch nach einem Neustart, bis zu 3 St
 
 ## Konfiguration
 
-| Feld                    | Typ    | Standard | Bedeutung                                                                            |
-| ----------------------- | ------ | -------- | ------------------------------------------------------------------------------------ |
-| `name_1` … `name_3`     | string |          | Name des Abfuhrplans (Kalender, Widget, Szenen)                                      |
-| `source_1` … `source_3` | string |          | Quelle von Waste Collection Schedule, z. B. `ics`, `awido_de` (Abfuhrplan 1 Pflicht) |
-| `args_1` … `args_3`     | string |          | Argumente: JSON-Objekt oder `schlüssel=wert; schlüssel=wert`                         |
-| `rename`                | string |          | `Original=Neu; …`                                                                    |
-| `hide`                  | string |          | `Art; Art`                                                                           |
-| `reminder_time`         | select | `19:00`  | Erinnerung am Abend, 16:00 bis 22:00 oder `off`                                      |
-| `morning_time`          | select | `06:00`  | Erinnerung am Morgen, 05:00 bis 10:00 oder `off`                                     |
-| `refresh_hours`         | select | `12`     | Aktualisierung alle 6, 12 oder 24 Stunden                                            |
-| `language`              | select | `en`     | Sprache der an Szenen gesendeten Texte (Standardnamen, Fehler)                       |
+| Feld                        | Typ    | Standard | Bedeutung                                                                                                                                |
+| --------------------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `house_1` … `house_3`       | select |          | Haus von Gladys (`source: "houses"`): gibt Kalender und Widget seinen Namen; zwei Abfuhrpläne eines Hauses tragen die Quelle in Klammern |
+| `country_1` … `country_3`   | select |          | Land der Bibliothek, in dem die Quelle gesucht wird                                                                                      |
+| `city_1` … `city_3`         | string |          | Ort: findet die Quelle, wenn Quelle leer ist, und füllt ihren Ortsparameter                                                              |
+| `postcode_1` … `postcode_3` | string |          | Postleitzahl                                                                                                                             |
+| `street_1` … `street_3`     | string |          | Straße                                                                                                                                   |
+| `number_1` … `number_3`     | string |          | Hausnummer                                                                                                                               |
+| `source_1` … `source_3`     | string |          | Quelle (optional): Titel einer Quelle oder Modulname, z. B. `AWM München`; leer, über den Ort gefunden                                   |
+| `url_1` … `url_3`           | string |          | ICS-Link (optional): allein die Quelle `ics`                                                                                             |
+| `args_1` … `args_3`         | string |          | Erweiterte Parameter: `schlüssel=wert; schlüssel=wert` (JSON wird weiter gelesen); sie haben Vorrang vor den Feldern oben                |
+| `rename`                    | string |          | `Original=Neu; …`                                                                                                                        |
+| `hide`                      | string |          | `Art; Art`                                                                                                                               |
+| `reminder_time`             | select | `19:00`  | Erinnerung am Abend, 16:00 bis 22:00 oder `off`                                                                                          |
+| `morning_time`              | select | `06:00`  | Erinnerung am Morgen, 05:00 bis 10:00 oder `off`                                                                                         |
+| `refresh_hours`             | select | `12`     | Aktualisierung alle 6, 12 oder 24 Stunden                                                                                                |
+| `language`                  | select | `en`     | Sprache der an Szenen gesendeten Texte (Standardnamen, Fehler)                                                                           |
 
-Schaltflächen der Konfigurationsseite: **Quelle suchen** (Suche nach Ort, Entsorger oder Land: Quelle, bekannte Argumente, fehlende Argumente, Link zur Dokumentation) und **Abfuhrpläne testen** (fragt jede Quelle sofort ab und zeigt, was sie geliefert hat, oder den Fehler mit den Vorschlägen der Quelle).
+`name_1` … `name_3` sind zugunsten des Hauses aus dem Formular verschwunden; eine ältere Konfiguration benennt ihre Abfuhrpläne weiterhin damit.
+
+Schaltflächen der Konfigurationsseite: **Quelle suchen** (Suche nach Ort, Entsorger oder Land: was jede Quelle braucht, mit den Bezeichnungen des Formulars, und ihr Name für Quelle, wenn der Ort nicht reicht) und **Abfuhrpläne testen** (fragt jede Quelle sofort ab und zeigt, was sie geliefert hat, oder was nicht stimmt: ein fehlender Wert, mehrere mögliche Quellen, die Vorschläge der Quelle).
 
 ## Verwendung
 
@@ -152,15 +160,16 @@ WCS_PYTHON=.wcs/venv/bin/python WCS_LIB_DIR=.wcs/lib WCS_DATA_DIR=.wcs/data \
   DEBUG=gladys-integration-sdk node index.js
 ```
 
-| Variable       | Standard           | Zweck                                         |
-| -------------- | ------------------ | --------------------------------------------- |
-| `WCS_PYTHON`   | `python3`          | Python-Interpreter mit den Abhängigkeiten     |
-| `WCS_LIB_DIR`  | `/app/python/lib`  | Ordner des Pakets `waste_collection_schedule` |
-| `WCS_BRIDGE`   | `python/bridge.py` | das Brückenskript                             |
-| `WCS_DATA_DIR` | `/data`            | Zustandsdatei und temporäre Dateien           |
-| `WCS_DEBUG`    | nicht gesetzt      | Debug-Protokolle der Quellen (stderr)         |
+| Variable       | Standard                  | Zweck                                                                 |
+| -------------- | ------------------------- | --------------------------------------------------------------------- |
+| `WCS_PYTHON`   | `python3`                 | Python-Interpreter mit den Abhängigkeiten                             |
+| `WCS_LIB_DIR`  | `/app/python/lib`         | Ordner des Pakets `waste_collection_schedule`                         |
+| `WCS_BRIDGE`   | `python/bridge.py`        | das Brückenskript                                                     |
+| `WCS_DATA_DIR` | `/data`                   | Zustandsdatei und temporäre Dateien                                   |
+| `WCS_DEBUG`    | nicht gesetzt             | Debug-Protokolle der Quellen (stderr)                                 |
+| `WCS_GEO_API`  | `https://geo.api.gouv.fr` | Suche des INSEE-Codes (die Tests leiten sie auf einen lokalen Server) |
 
-Eine Quelle direkt testen: `echo '{"command": "fetch", "source": "ics", "args": {"url": "…"}}' | WCS_LIB_DIR=.wcs/lib .wcs/venv/bin/python -I python/bridge.py`.
+Eine Adresse direkt testen: `echo '{"command": "fetch", "country": "France", "address": {"city": "Bordeaux", "street": "Cours Pasteur", "number": "20"}}' | WCS_LIB_DIR=.wcs/lib .wcs/venv/bin/python -I python/bridge.py`.
 
 | Skript                            | Was es tut                               |
 | --------------------------------- | ---------------------------------------- |
@@ -200,7 +209,11 @@ flowchart LR
 
 ## Fehlerbehebung
 
-- **Abfuhrpläne testen** erklärt die meisten Probleme: unbekannte Quelle, ungültiges Argument (mit den Vorschlägen der Quelle), Quelle gestört.
+- **Abfuhrpläne testen** erklärt die meisten Probleme, Abfuhrplan für Abfuhrplan.
+- **Keine Quelle gefunden**: Prüfen Sie das Land oder tragen Sie den Namen Ihres Entsorgers (von **Quelle suchen** geliefert) unter Quelle (optional) ein.
+- **Mehrere Quellen passen**: Übernehmen Sie die richtige, wie aufgelistet, unter Quelle (optional).
+- **Ein Wert fehlt**: Die Meldung nennt das auszufüllende Feld; ein Parameter ohne Feld kommt als `schlüssel=wert` unter Erweiterte Parameter.
+- **INSEE-Code**: Ort nicht gefunden oder mehrere Orte dieses Namens: Geben Sie die Postleitzahl an.
 - Eine hier defekte Quelle ist meist auch in Home Assistant defekt: prüfen und dann bei [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues) melden.
 - Ein Kalender ist leer: **Diesen Kalender synchronisieren** unter **Meine Kalender** prüfen.
 - Protokolle: der Reiter Protokolle der Integration; `DEBUG=gladys-integration-sdk` für die Details des SDK.

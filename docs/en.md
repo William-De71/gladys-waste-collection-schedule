@@ -12,38 +12,41 @@ The dates come from [Waste Collection Schedule](https://github.com/mampfes/hacs_
 
 ![The "Upcoming collections" widget, one schedule then two (generated illustration, not a screenshot)](https://raw.githubusercontent.com/William-De71/gladys-waste-collection-schedule/main/docs/assets/widgets.en.png)
 
-**Transport: cloud.** The container asks the web site or the API of your source, from your Gladys, every 12 hours by default. Your address (or what the source needs: a street, a house number, a calendar link) is sent to that source and to nobody else. Nothing goes through a Gladys server.
+**Transport: cloud.** The container asks the web site or the API of your source, from your Gladys, every 12 hours by default. Your address (or what the source needs: a street, a house number, a calendar link) is sent to that source and to nobody else. For the few French sources that need an INSEE code, the town and its postcode (never the street) are also sent to [geo.api.gouv.fr](https://geo.api.gouv.fr), the public API of the French State, to find it. Nothing goes through a Gladys server. The integration asks to read the houses of Gladys (location permission) only for their names.
 
 ## Requirements
 
 - Gladys Assistant 5.2.0 or later (calendar integrations).
 - Your Gladys reaches the internet.
-- A source for your address. Check the [list of the sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), or use the **Find a source** button of the configuration page. No source for your town? The **ics** source reads any calendar link (`.ics`, `webcal://`) your town hall or operator publishes.
+- A source for your address: most towns are found from their name alone. Check the [list of the sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), or use the **Find a source** button of the configuration page. No source for your town? Paste the calendar link (`.ics`, `webcal://`) your town hall or operator publishes into **ICS link**.
 
 ## Configuration
 
-An administrator configures the sources once, for the whole household.
-
-### Find your source and its arguments
-
-1. Open **Integrations → Waste Collection Schedule → Configuration**.
-2. At the bottom of the page, type the name of your town or of your waste operator in **Find a source**, then run it. The answer lists the matching sources, with the **source** to copy, the **arguments** already known and those to fill in, and the documentation of the source.
-3. Read the documentation of the source: it explains each argument (a street, a house number, an identifier found on the operator's web site).
+An administrator configures the schedules once, for the whole household.
 
 ### Fill in a schedule
 
-| Field     | What to write                                                                                                                  |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Name      | a name for the schedule, shown in the calendar, the widget and the scenes (for example "Home")                                 |
-| Source    | the name of the source, for example `ics` or `opendata_bordeauxmetropole_fr`                                                   |
-| Arguments | a JSON object, for example `{"city": "Bordeaux", "address": "20 Cours Pasteur"}`, or `key=value` pairs separated by semicolons |
+1. Open **Integrations → Waste Collection Schedule → Configuration**.
+2. In **Schedule 1**, fill in:
 
-Examples:
+| Field               | What to write                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------- |
+| House               | the house of Gladys: its name names the calendar, the widget and the scene texts                   |
+| Country             | the country of the address: the source is searched there                                           |
+| Town                | your town: the source is found from it (for example Bordeaux, Besançon, Nantes)                    |
+| Postcode            | your postcode, when the source asks for it                                                         |
+| Street, Number      | your address, when the source asks for it                                                          |
+| Source (optional)   | leave empty; see below when the town is not enough                                                 |
+| ICS link (optional) | a calendar link of your town hall, for a town without a source                                     |
+| Advanced parameters | rarely needed: `key=value` pairs separated by semicolons, for a parameter none of the fields gives |
 
-- an ICS link: source `ics`, arguments `{"url": "https://example.org/collections.ics"}`;
-- Bordeaux Métropole: source `opendata_bordeauxmetropole_fr`, arguments `{"city": "Bordeaux", "address": "20 Cours Pasteur"}`.
+3. Save, then press **Test the schedules**: for each schedule, how many dates and which waste types the source returned, or what is missing ("Grand Besançon Métropole also needs: Street"). A French INSEE code is found automatically from the town.
 
-Up to three schedules: a second home, or a second source for the same address (the town for most bins and an ICS link for glass). Save, then press **Test the schedules**: the answer tells, for each schedule, how many dates and which waste types the source returned, or what is wrong.
+Up to three schedules: a second home, or a second source for the same house (the town for most bins and an ICS link for glass). Two schedules of the same house show their source in brackets.
+
+### When the town is not enough
+
+Some towns are served by an operator whose name differs from the town (a village of a metropolis), and some names match several sources. **Test the schedules** then says so and lists the candidates. Type your town or your operator in **Find a source** at the bottom of the page: the answer lists the matching sources, what each one needs (with the names of the fields above) and its documentation. Copy the name of yours into **Source**, for example `Grand Besançon Métropole` for a village of Grand Besançon.
 
 ### Waste types, reminders and updates
 
@@ -94,8 +97,10 @@ Each trigger can be filtered on a schedule. A reminder is sent once, even if Gla
 
 ## Troubleshooting
 
-- **Unknown source**: check the spelling of the source (lowercase, underscores), as given by **Find a source**.
-- **Invalid arguments**: the message of **Test the schedules** names the wrong argument and, when the source knows them, suggests the right values (street names, towns).
+- **No source found**: check the country, or write the name of your waste operator in **Source**, as given by **Find a source**.
+- **Several sources match**: copy the right one, from the list in the message, into **Source**.
+- **A value is missing**: the message of **Test the schedules** names the field to fill in; a parameter without a field goes in **Advanced parameters** as `key=value`. When the source knows them, the message suggests the right values (street names, towns).
+- **INSEE code**: a town not found, or several towns with the same name: add the postcode.
 - **The source failed** or **took too long**: the web site of the source is down or changed, or it no longer finds your address. The integration retries after 15 minutes, then less and less often, and keeps the last known dates meanwhile. If it lasts, check whether the source works in Home Assistant: if not, report it to [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues), the fix will come with an update of the integration.
 - **Wrong or missing dates**: the dates are those of the source. Compare with the web site of your operator, and report a difference upstream.
 - **No calendar after enabling**: the calendars are pushed after the first successful update of the sources; check that **Synchronize this calendar** is on.

@@ -105,6 +105,7 @@ jobs:
             docker run --rm -i --read-only --memory 256m --network none --user node \
               --tmpfs /data:uid=1000,gid=1000 \
               -v "$PWD/python/check_sources.py:/tmp/check_sources.py:ro" \
+              -v "$PWD/gladys-assistant-integration.json:/tmp/manifest.json:ro" \
               --entrypoint /opt/venv/bin/python gladys-waste-collection-schedule:ci -I "$@"
           }
           echo '{"command": "version"}' | run /app/python/bridge.py | tee version.json

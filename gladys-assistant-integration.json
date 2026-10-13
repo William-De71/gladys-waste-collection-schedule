@@ -14,6 +14,7 @@
   "cover_image": "https://raw.githubusercontent.com/William-De71/gladys-waste-collection-schedule/main/cover.jpg",
   "categories": ["services"],
   "transports": ["cloud"],
+  "location": true,
   "config_schema": [
     {
       "key": "intro",
@@ -25,10 +26,10 @@
         "es": "Encontrar su fuente"
       },
       "description": {
-        "en": "Waste Collection Schedule knows nearly 1,000 sources: towns, waste operators, apps and ICS calendar links. Use the \"Find a source\" button at the bottom of this page with the name of your town: it gives the source and the arguments to copy here. The documentation of each source lists its arguments. Up to three schedules (for example home and a second home).",
-        "fr": "Waste Collection Schedule connaît près de 1 000 sources : communes, organismes de collecte, applications et liens de calendrier ICS. Utilisez le bouton « Trouver une source » en bas de cette page avec le nom de votre commune : il donne la source et les arguments à recopier ici. La documentation de chaque source détaille ses arguments. Jusqu’à trois calendriers (par exemple la maison et une résidence secondaire).",
-        "de": "Waste Collection Schedule kennt fast 1.000 Quellen: Gemeinden, Entsorger, Apps und ICS-Kalenderlinks. Nutzen Sie die Schaltfläche „Quelle suchen“ unten auf dieser Seite mit dem Namen Ihres Ortes: Sie liefert die Quelle und die Argumente zum Übernehmen. Die Dokumentation jeder Quelle beschreibt ihre Argumente. Bis zu drei Abfuhrpläne (zum Beispiel Wohnung und Ferienhaus).",
-        "es": "Waste Collection Schedule conoce casi 1.000 fuentes: municipios, operadores de residuos, aplicaciones y enlaces de calendario ICS. Use el botón «Buscar una fuente» al final de esta página con el nombre de su municipio: le da la fuente y los argumentos que debe copiar aquí. La documentación de cada fuente detalla sus argumentos. Hasta tres calendarios (por ejemplo, la casa y una segunda residencia)."
+        "en": "Waste Collection Schedule knows nearly 1,000 sources: towns, waste operators, apps and ICS calendar links. For each schedule, choose the house and the country, and fill in your address: the source is found from the town. Then press \"Test the schedules\" at the bottom of this page. Up to three schedules (for example home and a second home).",
+        "fr": "Waste Collection Schedule connaît près de 1 000 sources : communes, organismes de collecte, applications et liens de calendrier ICS. Pour chaque calendrier, choisissez la maison et le pays, et remplissez votre adresse : la source est trouvée à partir de la commune. Appuyez ensuite sur « Tester les calendriers » en bas de cette page. Jusqu’à trois calendriers (par exemple la maison et une résidence secondaire).",
+        "de": "Waste Collection Schedule kennt fast 1.000 Quellen: Gemeinden, Entsorger, Apps und ICS-Kalenderlinks. Wählen Sie für jeden Abfuhrplan das Haus und das Land und geben Sie Ihre Adresse ein: Die Quelle wird über den Ort gefunden. Drücken Sie dann unten auf dieser Seite „Abfuhrpläne testen“. Bis zu drei Abfuhrpläne (zum Beispiel Wohnung und Ferienhaus).",
+        "es": "Waste Collection Schedule conoce casi 1.000 fuentes: municipios, operadores de residuos, aplicaciones y enlaces de calendario ICS. Para cada calendario, elija la casa y el país, y rellene su dirección: la fuente se encuentra a partir del municipio. Pulse luego «Probar los calendarios» al final de esta página. Hasta tres calendarios (por ejemplo, la casa y una segunda residencia)."
       },
       "links": [
         {
@@ -61,39 +62,448 @@
         "es": "Calendario 1"
       },
       "description": {
-        "en": "Source: the name of the source, e.g. ics or opendata_bordeauxmetropole_fr. Arguments: a JSON object, e.g. {\"city\": \"Bordeaux\", \"address\": \"20 Cours Pasteur\"}, or key=value pairs separated by semicolons.",
-        "fr": "Source : le nom de la source, par exemple ics ou opendata_bordeauxmetropole_fr. Arguments : un objet JSON, par exemple {\"city\": \"Bordeaux\", \"address\": \"20 Cours Pasteur\"}, ou des paires clé=valeur séparées par des points-virgules.",
-        "de": "Quelle: der Name der Quelle, z. B. ics oder opendata_bordeauxmetropole_fr. Argumente: ein JSON-Objekt, z. B. {\"city\": \"Bordeaux\", \"address\": \"20 Cours Pasteur\"}, oder Paare schlüssel=wert, getrennt durch Semikolons.",
-        "es": "Fuente: el nombre de la fuente, por ejemplo ics u opendata_bordeauxmetropole_fr. Argumentos: un objeto JSON, por ejemplo {\"city\": \"Bordeaux\", \"address\": \"20 Cours Pasteur\"}, o pares clave=valor separados por punto y coma."
+        "en": "Fill in what your waste operator asks for: most only need the town and the street. Missing a value? \"Test the schedules\" says which one.",
+        "fr": "Remplissez ce que demande votre organisme de collecte : la plupart n’ont besoin que de la commune et de la rue. Il manque une valeur ? « Tester les calendriers » vous dit laquelle.",
+        "de": "Füllen Sie aus, was Ihr Entsorger verlangt: Meist genügen Ort und Straße. Fehlt ein Wert, sagt „Abfuhrpläne testen“ welcher.",
+        "es": "Rellene lo que pide su operador de residuos: la mayoría solo necesita el municipio y la calle. ¿Falta un valor? «Probar los calendarios» le dice cuál."
       }
     },
     {
-      "key": "name_1",
+      "key": "house_1",
+      "type": "select",
+      "source": "houses",
+      "label": {
+        "en": "House",
+        "fr": "Maison",
+        "de": "Haus",
+        "es": "Casa"
+      },
+      "description": {
+        "en": "Gives its name to the calendar and the widget.",
+        "fr": "Donne son nom au calendrier et au widget.",
+        "de": "Gibt dem Kalender und dem Widget seinen Namen.",
+        "es": "Da su nombre al calendario y al widget."
+      }
+    },
+    {
+      "key": "country_1",
+      "type": "select",
+      "options": [
+        {
+          "value": "Australia",
+          "label": {
+            "en": "Australia",
+            "fr": "Australie",
+            "de": "Australien",
+            "es": "Australia"
+          }
+        },
+        {
+          "value": "Austria",
+          "label": {
+            "en": "Austria",
+            "fr": "Autriche",
+            "de": "Österreich",
+            "es": "Austria"
+          }
+        },
+        {
+          "value": "Belgium",
+          "label": {
+            "en": "Belgium",
+            "fr": "Belgique",
+            "de": "Belgien",
+            "es": "Bélgica"
+          }
+        },
+        {
+          "value": "Canada",
+          "label": {
+            "en": "Canada",
+            "fr": "Canada",
+            "de": "Kanada",
+            "es": "Canadá"
+          }
+        },
+        {
+          "value": "Czech Republic",
+          "label": {
+            "en": "Czech Republic",
+            "fr": "Tchéquie",
+            "de": "Tschechien",
+            "es": "Chequia"
+          }
+        },
+        {
+          "value": "Denmark",
+          "label": {
+            "en": "Denmark",
+            "fr": "Danemark",
+            "de": "Dänemark",
+            "es": "Dinamarca"
+          }
+        },
+        {
+          "value": "Finland",
+          "label": {
+            "en": "Finland",
+            "fr": "Finlande",
+            "de": "Finnland",
+            "es": "Finlandia"
+          }
+        },
+        {
+          "value": "France",
+          "label": {
+            "en": "France",
+            "fr": "France",
+            "de": "Frankreich",
+            "es": "Francia"
+          }
+        },
+        {
+          "value": "Germany",
+          "label": {
+            "en": "Germany",
+            "fr": "Allemagne",
+            "de": "Deutschland",
+            "es": "Alemania"
+          }
+        },
+        {
+          "value": "Hungary",
+          "label": {
+            "en": "Hungary",
+            "fr": "Hongrie",
+            "de": "Ungarn",
+            "es": "Hungría"
+          }
+        },
+        {
+          "value": "Iceland",
+          "label": {
+            "en": "Iceland",
+            "fr": "Islande",
+            "de": "Island",
+            "es": "Islandia"
+          }
+        },
+        {
+          "value": "Ireland",
+          "label": {
+            "en": "Ireland",
+            "fr": "Irlande",
+            "de": "Irland",
+            "es": "Irlanda"
+          }
+        },
+        {
+          "value": "Italy",
+          "label": {
+            "en": "Italy",
+            "fr": "Italie",
+            "de": "Italien",
+            "es": "Italia"
+          }
+        },
+        {
+          "value": "Japan",
+          "label": {
+            "en": "Japan",
+            "fr": "Japon",
+            "de": "Japan",
+            "es": "Japón"
+          }
+        },
+        {
+          "value": "Liechtenstein",
+          "label": {
+            "en": "Liechtenstein",
+            "fr": "Liechtenstein",
+            "de": "Liechtenstein",
+            "es": "Liechtenstein"
+          }
+        },
+        {
+          "value": "Lithuania",
+          "label": {
+            "en": "Lithuania",
+            "fr": "Lituanie",
+            "de": "Litauen",
+            "es": "Lituania"
+          }
+        },
+        {
+          "value": "Luxembourg",
+          "label": {
+            "en": "Luxembourg",
+            "fr": "Luxembourg",
+            "de": "Luxemburg",
+            "es": "Luxemburgo"
+          }
+        },
+        {
+          "value": "Malta",
+          "label": {
+            "en": "Malta",
+            "fr": "Malte",
+            "de": "Malta",
+            "es": "Malta"
+          }
+        },
+        {
+          "value": "Netherlands",
+          "label": {
+            "en": "Netherlands",
+            "fr": "Pays-Bas",
+            "de": "Niederlande",
+            "es": "Países Bajos"
+          }
+        },
+        {
+          "value": "New Zealand",
+          "label": {
+            "en": "New Zealand",
+            "fr": "Nouvelle-Zélande",
+            "de": "Neuseeland",
+            "es": "Nueva Zelanda"
+          }
+        },
+        {
+          "value": "Norway",
+          "label": {
+            "en": "Norway",
+            "fr": "Norvège",
+            "de": "Norwegen",
+            "es": "Noruega"
+          }
+        },
+        {
+          "value": "Poland",
+          "label": {
+            "en": "Poland",
+            "fr": "Pologne",
+            "de": "Polen",
+            "es": "Polonia"
+          }
+        },
+        {
+          "value": "Portugal",
+          "label": {
+            "en": "Portugal",
+            "fr": "Portugal",
+            "de": "Portugal",
+            "es": "Portugal"
+          }
+        },
+        {
+          "value": "Slovakia",
+          "label": {
+            "en": "Slovakia",
+            "fr": "Slovaquie",
+            "de": "Slowakei",
+            "es": "Eslovaquia"
+          }
+        },
+        {
+          "value": "Slovenia",
+          "label": {
+            "en": "Slovenia",
+            "fr": "Slovénie",
+            "de": "Slowenien",
+            "es": "Eslovenia"
+          }
+        },
+        {
+          "value": "South Africa",
+          "label": {
+            "en": "South Africa",
+            "fr": "Afrique du Sud",
+            "de": "Südafrika",
+            "es": "Sudáfrica"
+          }
+        },
+        {
+          "value": "Sweden",
+          "label": {
+            "en": "Sweden",
+            "fr": "Suède",
+            "de": "Schweden",
+            "es": "Suecia"
+          }
+        },
+        {
+          "value": "Switzerland",
+          "label": {
+            "en": "Switzerland",
+            "fr": "Suisse",
+            "de": "Schweiz",
+            "es": "Suiza"
+          }
+        },
+        {
+          "value": "United Kingdom",
+          "label": {
+            "en": "United Kingdom",
+            "fr": "Royaume-Uni",
+            "de": "Vereinigtes Königreich",
+            "es": "Reino Unido"
+          }
+        },
+        {
+          "value": "United States of America",
+          "label": {
+            "en": "United States",
+            "fr": "États-Unis",
+            "de": "Vereinigte Staaten",
+            "es": "Estados Unidos"
+          }
+        },
+        {
+          "value": "Uruguay",
+          "label": {
+            "en": "Uruguay",
+            "fr": "Uruguay",
+            "de": "Uruguay",
+            "es": "Uruguay"
+          }
+        }
+      ],
+      "label": {
+        "en": "Country",
+        "fr": "Pays",
+        "de": "Land",
+        "es": "País"
+      }
+    },
+    {
+      "key": "city_1",
       "type": "string",
-      "label": { "en": "Name", "fr": "Nom", "de": "Name", "es": "Nombre" },
-      "placeholder": { "en": "Home", "fr": "Maison", "de": "Zuhause", "es": "Casa" }
+      "label": {
+        "en": "Town",
+        "fr": "Commune",
+        "de": "Ort",
+        "es": "Municipio"
+      },
+      "placeholder": {
+        "en": "Bordeaux",
+        "fr": "Bordeaux",
+        "de": "Köln",
+        "es": "Bordeaux"
+      }
+    },
+    {
+      "key": "postcode_1",
+      "type": "string",
+      "label": {
+        "en": "Postcode",
+        "fr": "Code postal",
+        "de": "Postleitzahl",
+        "es": "Código postal"
+      },
+      "placeholder": {
+        "en": "33000",
+        "fr": "33000",
+        "de": "50667",
+        "es": "33000"
+      }
+    },
+    {
+      "key": "street_1",
+      "type": "string",
+      "label": {
+        "en": "Street",
+        "fr": "Rue",
+        "de": "Straße",
+        "es": "Calle"
+      },
+      "placeholder": {
+        "en": "Cours Pasteur",
+        "fr": "Cours Pasteur",
+        "de": "Domstraße",
+        "es": "Cours Pasteur"
+      }
+    },
+    {
+      "key": "number_1",
+      "type": "string",
+      "label": {
+        "en": "Number",
+        "fr": "Numéro",
+        "de": "Hausnummer",
+        "es": "Número"
+      },
+      "placeholder": {
+        "en": "20",
+        "fr": "20",
+        "de": "20",
+        "es": "20"
+      }
     },
     {
       "key": "source_1",
       "type": "string",
-      "label": { "en": "Source", "fr": "Source", "de": "Quelle", "es": "Fuente" },
-      "placeholder": {
-        "en": "ics, opendata_bordeauxmetropole_fr…",
-        "fr": "ics, opendata_bordeauxmetropole_fr…",
-        "de": "ics, opendata_bordeauxmetropole_fr…",
-        "es": "ics, opendata_bordeauxmetropole_fr…"
+      "label": {
+        "en": "Source (optional)",
+        "fr": "Source (facultatif)",
+        "de": "Quelle (optional)",
+        "es": "Fuente (opcional)"
       },
-      "required": true
+      "description": {
+        "en": "Leave empty: the source is found from the town. Fill it in only if the town is not enough, with a name given by \"Find a source\".",
+        "fr": "Laissez vide : la source est trouvée à partir de la commune. Remplissez-la seulement si la commune ne suffit pas, avec un nom donné par « Trouver une source ».",
+        "de": "Leer lassen: Die Quelle wird über den Ort gefunden. Nur ausfüllen, wenn der Ort nicht reicht, mit einem Namen aus „Quelle suchen“.",
+        "es": "Déjelo vacío: la fuente se encuentra a partir del municipio. Rellénela solo si el municipio no basta, con un nombre dado por «Buscar una fuente»."
+      },
+      "placeholder": {
+        "en": "Grand Besançon Métropole",
+        "fr": "Grand Besançon Métropole",
+        "de": "Grand Besançon Métropole",
+        "es": "Grand Besançon Métropole"
+      }
+    },
+    {
+      "key": "url_1",
+      "type": "string",
+      "label": {
+        "en": "ICS link (optional)",
+        "fr": "Lien ICS (facultatif)",
+        "de": "ICS-Link (optional)",
+        "es": "Enlace ICS (opcional)"
+      },
+      "description": {
+        "en": "The calendar link of your town hall, if your town has no source.",
+        "fr": "Le lien du calendrier de votre mairie, si votre commune n’a pas de source.",
+        "de": "Der Kalenderlink Ihrer Gemeinde, falls Ihr Ort keine Quelle hat.",
+        "es": "El enlace del calendario de su ayuntamiento, si su municipio no tiene fuente."
+      },
+      "placeholder": {
+        "en": "https://…/calendar.ics",
+        "fr": "https://…/calendrier.ics",
+        "de": "https://…/kalender.ics",
+        "es": "https://…/calendario.ics"
+      }
     },
     {
       "key": "args_1",
       "type": "string",
-      "label": { "en": "Arguments", "fr": "Arguments", "de": "Argumente", "es": "Argumentos" },
+      "label": {
+        "en": "Advanced parameters",
+        "fr": "Paramètres avancés",
+        "de": "Erweiterte Parameter",
+        "es": "Parámetros avanzados"
+      },
+      "description": {
+        "en": "Rarely needed: only when \"Test the schedules\" asks for a parameter that is not above.",
+        "fr": "Rarement utile : seulement si « Tester les calendriers » demande un paramètre absent ci-dessus.",
+        "de": "Selten nötig: nur wenn „Abfuhrpläne testen“ einen Parameter verlangt, der oben fehlt.",
+        "es": "Rara vez necesario: solo si «Probar los calendarios» pide un parámetro que no está arriba."
+      },
       "placeholder": {
-        "en": "{\"url\": \"https://…/calendar.ics\"}",
-        "fr": "{\"url\": \"https://…/calendrier.ics\"}",
-        "de": "{\"url\": \"https://…/kalender.ics\"}",
-        "es": "{\"url\": \"https://…/calendario.ics\"}"
+        "en": "uprn=100090123456; zone=north",
+        "fr": "secteur=nord; zone=2",
+        "de": "bezirk=Nord; zone=2",
+        "es": "zona=norte; sector=2"
       }
     },
     {
@@ -113,19 +523,442 @@
       }
     },
     {
-      "key": "name_2",
+      "key": "house_2",
+      "type": "select",
+      "source": "houses",
+      "label": {
+        "en": "House",
+        "fr": "Maison",
+        "de": "Haus",
+        "es": "Casa"
+      },
+      "description": {
+        "en": "Gives its name to the calendar and the widget.",
+        "fr": "Donne son nom au calendrier et au widget.",
+        "de": "Gibt dem Kalender und dem Widget seinen Namen.",
+        "es": "Da su nombre al calendario y al widget."
+      }
+    },
+    {
+      "key": "country_2",
+      "type": "select",
+      "options": [
+        {
+          "value": "Australia",
+          "label": {
+            "en": "Australia",
+            "fr": "Australie",
+            "de": "Australien",
+            "es": "Australia"
+          }
+        },
+        {
+          "value": "Austria",
+          "label": {
+            "en": "Austria",
+            "fr": "Autriche",
+            "de": "Österreich",
+            "es": "Austria"
+          }
+        },
+        {
+          "value": "Belgium",
+          "label": {
+            "en": "Belgium",
+            "fr": "Belgique",
+            "de": "Belgien",
+            "es": "Bélgica"
+          }
+        },
+        {
+          "value": "Canada",
+          "label": {
+            "en": "Canada",
+            "fr": "Canada",
+            "de": "Kanada",
+            "es": "Canadá"
+          }
+        },
+        {
+          "value": "Czech Republic",
+          "label": {
+            "en": "Czech Republic",
+            "fr": "Tchéquie",
+            "de": "Tschechien",
+            "es": "Chequia"
+          }
+        },
+        {
+          "value": "Denmark",
+          "label": {
+            "en": "Denmark",
+            "fr": "Danemark",
+            "de": "Dänemark",
+            "es": "Dinamarca"
+          }
+        },
+        {
+          "value": "Finland",
+          "label": {
+            "en": "Finland",
+            "fr": "Finlande",
+            "de": "Finnland",
+            "es": "Finlandia"
+          }
+        },
+        {
+          "value": "France",
+          "label": {
+            "en": "France",
+            "fr": "France",
+            "de": "Frankreich",
+            "es": "Francia"
+          }
+        },
+        {
+          "value": "Germany",
+          "label": {
+            "en": "Germany",
+            "fr": "Allemagne",
+            "de": "Deutschland",
+            "es": "Alemania"
+          }
+        },
+        {
+          "value": "Hungary",
+          "label": {
+            "en": "Hungary",
+            "fr": "Hongrie",
+            "de": "Ungarn",
+            "es": "Hungría"
+          }
+        },
+        {
+          "value": "Iceland",
+          "label": {
+            "en": "Iceland",
+            "fr": "Islande",
+            "de": "Island",
+            "es": "Islandia"
+          }
+        },
+        {
+          "value": "Ireland",
+          "label": {
+            "en": "Ireland",
+            "fr": "Irlande",
+            "de": "Irland",
+            "es": "Irlanda"
+          }
+        },
+        {
+          "value": "Italy",
+          "label": {
+            "en": "Italy",
+            "fr": "Italie",
+            "de": "Italien",
+            "es": "Italia"
+          }
+        },
+        {
+          "value": "Japan",
+          "label": {
+            "en": "Japan",
+            "fr": "Japon",
+            "de": "Japan",
+            "es": "Japón"
+          }
+        },
+        {
+          "value": "Liechtenstein",
+          "label": {
+            "en": "Liechtenstein",
+            "fr": "Liechtenstein",
+            "de": "Liechtenstein",
+            "es": "Liechtenstein"
+          }
+        },
+        {
+          "value": "Lithuania",
+          "label": {
+            "en": "Lithuania",
+            "fr": "Lituanie",
+            "de": "Litauen",
+            "es": "Lituania"
+          }
+        },
+        {
+          "value": "Luxembourg",
+          "label": {
+            "en": "Luxembourg",
+            "fr": "Luxembourg",
+            "de": "Luxemburg",
+            "es": "Luxemburgo"
+          }
+        },
+        {
+          "value": "Malta",
+          "label": {
+            "en": "Malta",
+            "fr": "Malte",
+            "de": "Malta",
+            "es": "Malta"
+          }
+        },
+        {
+          "value": "Netherlands",
+          "label": {
+            "en": "Netherlands",
+            "fr": "Pays-Bas",
+            "de": "Niederlande",
+            "es": "Países Bajos"
+          }
+        },
+        {
+          "value": "New Zealand",
+          "label": {
+            "en": "New Zealand",
+            "fr": "Nouvelle-Zélande",
+            "de": "Neuseeland",
+            "es": "Nueva Zelanda"
+          }
+        },
+        {
+          "value": "Norway",
+          "label": {
+            "en": "Norway",
+            "fr": "Norvège",
+            "de": "Norwegen",
+            "es": "Noruega"
+          }
+        },
+        {
+          "value": "Poland",
+          "label": {
+            "en": "Poland",
+            "fr": "Pologne",
+            "de": "Polen",
+            "es": "Polonia"
+          }
+        },
+        {
+          "value": "Portugal",
+          "label": {
+            "en": "Portugal",
+            "fr": "Portugal",
+            "de": "Portugal",
+            "es": "Portugal"
+          }
+        },
+        {
+          "value": "Slovakia",
+          "label": {
+            "en": "Slovakia",
+            "fr": "Slovaquie",
+            "de": "Slowakei",
+            "es": "Eslovaquia"
+          }
+        },
+        {
+          "value": "Slovenia",
+          "label": {
+            "en": "Slovenia",
+            "fr": "Slovénie",
+            "de": "Slowenien",
+            "es": "Eslovenia"
+          }
+        },
+        {
+          "value": "South Africa",
+          "label": {
+            "en": "South Africa",
+            "fr": "Afrique du Sud",
+            "de": "Südafrika",
+            "es": "Sudáfrica"
+          }
+        },
+        {
+          "value": "Sweden",
+          "label": {
+            "en": "Sweden",
+            "fr": "Suède",
+            "de": "Schweden",
+            "es": "Suecia"
+          }
+        },
+        {
+          "value": "Switzerland",
+          "label": {
+            "en": "Switzerland",
+            "fr": "Suisse",
+            "de": "Schweiz",
+            "es": "Suiza"
+          }
+        },
+        {
+          "value": "United Kingdom",
+          "label": {
+            "en": "United Kingdom",
+            "fr": "Royaume-Uni",
+            "de": "Vereinigtes Königreich",
+            "es": "Reino Unido"
+          }
+        },
+        {
+          "value": "United States of America",
+          "label": {
+            "en": "United States",
+            "fr": "États-Unis",
+            "de": "Vereinigte Staaten",
+            "es": "Estados Unidos"
+          }
+        },
+        {
+          "value": "Uruguay",
+          "label": {
+            "en": "Uruguay",
+            "fr": "Uruguay",
+            "de": "Uruguay",
+            "es": "Uruguay"
+          }
+        }
+      ],
+      "label": {
+        "en": "Country",
+        "fr": "Pays",
+        "de": "Land",
+        "es": "País"
+      }
+    },
+    {
+      "key": "city_2",
       "type": "string",
-      "label": { "en": "Name", "fr": "Nom", "de": "Name", "es": "Nombre" }
+      "label": {
+        "en": "Town",
+        "fr": "Commune",
+        "de": "Ort",
+        "es": "Municipio"
+      },
+      "placeholder": {
+        "en": "Bordeaux",
+        "fr": "Bordeaux",
+        "de": "Köln",
+        "es": "Bordeaux"
+      }
+    },
+    {
+      "key": "postcode_2",
+      "type": "string",
+      "label": {
+        "en": "Postcode",
+        "fr": "Code postal",
+        "de": "Postleitzahl",
+        "es": "Código postal"
+      },
+      "placeholder": {
+        "en": "33000",
+        "fr": "33000",
+        "de": "50667",
+        "es": "33000"
+      }
+    },
+    {
+      "key": "street_2",
+      "type": "string",
+      "label": {
+        "en": "Street",
+        "fr": "Rue",
+        "de": "Straße",
+        "es": "Calle"
+      },
+      "placeholder": {
+        "en": "Cours Pasteur",
+        "fr": "Cours Pasteur",
+        "de": "Domstraße",
+        "es": "Cours Pasteur"
+      }
+    },
+    {
+      "key": "number_2",
+      "type": "string",
+      "label": {
+        "en": "Number",
+        "fr": "Numéro",
+        "de": "Hausnummer",
+        "es": "Número"
+      },
+      "placeholder": {
+        "en": "20",
+        "fr": "20",
+        "de": "20",
+        "es": "20"
+      }
     },
     {
       "key": "source_2",
       "type": "string",
-      "label": { "en": "Source", "fr": "Source", "de": "Quelle", "es": "Fuente" }
+      "label": {
+        "en": "Source (optional)",
+        "fr": "Source (facultatif)",
+        "de": "Quelle (optional)",
+        "es": "Fuente (opcional)"
+      },
+      "description": {
+        "en": "Leave empty: the source is found from the town. Fill it in only if the town is not enough, with a name given by \"Find a source\".",
+        "fr": "Laissez vide : la source est trouvée à partir de la commune. Remplissez-la seulement si la commune ne suffit pas, avec un nom donné par « Trouver une source ».",
+        "de": "Leer lassen: Die Quelle wird über den Ort gefunden. Nur ausfüllen, wenn der Ort nicht reicht, mit einem Namen aus „Quelle suchen“.",
+        "es": "Déjelo vacío: la fuente se encuentra a partir del municipio. Rellénela solo si el municipio no basta, con un nombre dado por «Buscar una fuente»."
+      },
+      "placeholder": {
+        "en": "Grand Besançon Métropole",
+        "fr": "Grand Besançon Métropole",
+        "de": "Grand Besançon Métropole",
+        "es": "Grand Besançon Métropole"
+      }
+    },
+    {
+      "key": "url_2",
+      "type": "string",
+      "label": {
+        "en": "ICS link (optional)",
+        "fr": "Lien ICS (facultatif)",
+        "de": "ICS-Link (optional)",
+        "es": "Enlace ICS (opcional)"
+      },
+      "description": {
+        "en": "The calendar link of your town hall, if your town has no source.",
+        "fr": "Le lien du calendrier de votre mairie, si votre commune n’a pas de source.",
+        "de": "Der Kalenderlink Ihrer Gemeinde, falls Ihr Ort keine Quelle hat.",
+        "es": "El enlace del calendario de su ayuntamiento, si su municipio no tiene fuente."
+      },
+      "placeholder": {
+        "en": "https://…/calendar.ics",
+        "fr": "https://…/calendrier.ics",
+        "de": "https://…/kalender.ics",
+        "es": "https://…/calendario.ics"
+      }
     },
     {
       "key": "args_2",
       "type": "string",
-      "label": { "en": "Arguments", "fr": "Arguments", "de": "Argumente", "es": "Argumentos" }
+      "label": {
+        "en": "Advanced parameters",
+        "fr": "Paramètres avancés",
+        "de": "Erweiterte Parameter",
+        "es": "Parámetros avanzados"
+      },
+      "description": {
+        "en": "Rarely needed: only when \"Test the schedules\" asks for a parameter that is not above.",
+        "fr": "Rarement utile : seulement si « Tester les calendriers » demande un paramètre absent ci-dessus.",
+        "de": "Selten nötig: nur wenn „Abfuhrpläne testen“ einen Parameter verlangt, der oben fehlt.",
+        "es": "Rara vez necesario: solo si «Probar los calendarios» pide un parámetro que no está arriba."
+      },
+      "placeholder": {
+        "en": "uprn=100090123456; zone=north",
+        "fr": "secteur=nord; zone=2",
+        "de": "bezirk=Nord; zone=2",
+        "es": "zona=norte; sector=2"
+      }
     },
     {
       "key": "schedule_3",
@@ -138,19 +971,442 @@
       }
     },
     {
-      "key": "name_3",
+      "key": "house_3",
+      "type": "select",
+      "source": "houses",
+      "label": {
+        "en": "House",
+        "fr": "Maison",
+        "de": "Haus",
+        "es": "Casa"
+      },
+      "description": {
+        "en": "Gives its name to the calendar and the widget.",
+        "fr": "Donne son nom au calendrier et au widget.",
+        "de": "Gibt dem Kalender und dem Widget seinen Namen.",
+        "es": "Da su nombre al calendario y al widget."
+      }
+    },
+    {
+      "key": "country_3",
+      "type": "select",
+      "options": [
+        {
+          "value": "Australia",
+          "label": {
+            "en": "Australia",
+            "fr": "Australie",
+            "de": "Australien",
+            "es": "Australia"
+          }
+        },
+        {
+          "value": "Austria",
+          "label": {
+            "en": "Austria",
+            "fr": "Autriche",
+            "de": "Österreich",
+            "es": "Austria"
+          }
+        },
+        {
+          "value": "Belgium",
+          "label": {
+            "en": "Belgium",
+            "fr": "Belgique",
+            "de": "Belgien",
+            "es": "Bélgica"
+          }
+        },
+        {
+          "value": "Canada",
+          "label": {
+            "en": "Canada",
+            "fr": "Canada",
+            "de": "Kanada",
+            "es": "Canadá"
+          }
+        },
+        {
+          "value": "Czech Republic",
+          "label": {
+            "en": "Czech Republic",
+            "fr": "Tchéquie",
+            "de": "Tschechien",
+            "es": "Chequia"
+          }
+        },
+        {
+          "value": "Denmark",
+          "label": {
+            "en": "Denmark",
+            "fr": "Danemark",
+            "de": "Dänemark",
+            "es": "Dinamarca"
+          }
+        },
+        {
+          "value": "Finland",
+          "label": {
+            "en": "Finland",
+            "fr": "Finlande",
+            "de": "Finnland",
+            "es": "Finlandia"
+          }
+        },
+        {
+          "value": "France",
+          "label": {
+            "en": "France",
+            "fr": "France",
+            "de": "Frankreich",
+            "es": "Francia"
+          }
+        },
+        {
+          "value": "Germany",
+          "label": {
+            "en": "Germany",
+            "fr": "Allemagne",
+            "de": "Deutschland",
+            "es": "Alemania"
+          }
+        },
+        {
+          "value": "Hungary",
+          "label": {
+            "en": "Hungary",
+            "fr": "Hongrie",
+            "de": "Ungarn",
+            "es": "Hungría"
+          }
+        },
+        {
+          "value": "Iceland",
+          "label": {
+            "en": "Iceland",
+            "fr": "Islande",
+            "de": "Island",
+            "es": "Islandia"
+          }
+        },
+        {
+          "value": "Ireland",
+          "label": {
+            "en": "Ireland",
+            "fr": "Irlande",
+            "de": "Irland",
+            "es": "Irlanda"
+          }
+        },
+        {
+          "value": "Italy",
+          "label": {
+            "en": "Italy",
+            "fr": "Italie",
+            "de": "Italien",
+            "es": "Italia"
+          }
+        },
+        {
+          "value": "Japan",
+          "label": {
+            "en": "Japan",
+            "fr": "Japon",
+            "de": "Japan",
+            "es": "Japón"
+          }
+        },
+        {
+          "value": "Liechtenstein",
+          "label": {
+            "en": "Liechtenstein",
+            "fr": "Liechtenstein",
+            "de": "Liechtenstein",
+            "es": "Liechtenstein"
+          }
+        },
+        {
+          "value": "Lithuania",
+          "label": {
+            "en": "Lithuania",
+            "fr": "Lituanie",
+            "de": "Litauen",
+            "es": "Lituania"
+          }
+        },
+        {
+          "value": "Luxembourg",
+          "label": {
+            "en": "Luxembourg",
+            "fr": "Luxembourg",
+            "de": "Luxemburg",
+            "es": "Luxemburgo"
+          }
+        },
+        {
+          "value": "Malta",
+          "label": {
+            "en": "Malta",
+            "fr": "Malte",
+            "de": "Malta",
+            "es": "Malta"
+          }
+        },
+        {
+          "value": "Netherlands",
+          "label": {
+            "en": "Netherlands",
+            "fr": "Pays-Bas",
+            "de": "Niederlande",
+            "es": "Países Bajos"
+          }
+        },
+        {
+          "value": "New Zealand",
+          "label": {
+            "en": "New Zealand",
+            "fr": "Nouvelle-Zélande",
+            "de": "Neuseeland",
+            "es": "Nueva Zelanda"
+          }
+        },
+        {
+          "value": "Norway",
+          "label": {
+            "en": "Norway",
+            "fr": "Norvège",
+            "de": "Norwegen",
+            "es": "Noruega"
+          }
+        },
+        {
+          "value": "Poland",
+          "label": {
+            "en": "Poland",
+            "fr": "Pologne",
+            "de": "Polen",
+            "es": "Polonia"
+          }
+        },
+        {
+          "value": "Portugal",
+          "label": {
+            "en": "Portugal",
+            "fr": "Portugal",
+            "de": "Portugal",
+            "es": "Portugal"
+          }
+        },
+        {
+          "value": "Slovakia",
+          "label": {
+            "en": "Slovakia",
+            "fr": "Slovaquie",
+            "de": "Slowakei",
+            "es": "Eslovaquia"
+          }
+        },
+        {
+          "value": "Slovenia",
+          "label": {
+            "en": "Slovenia",
+            "fr": "Slovénie",
+            "de": "Slowenien",
+            "es": "Eslovenia"
+          }
+        },
+        {
+          "value": "South Africa",
+          "label": {
+            "en": "South Africa",
+            "fr": "Afrique du Sud",
+            "de": "Südafrika",
+            "es": "Sudáfrica"
+          }
+        },
+        {
+          "value": "Sweden",
+          "label": {
+            "en": "Sweden",
+            "fr": "Suède",
+            "de": "Schweden",
+            "es": "Suecia"
+          }
+        },
+        {
+          "value": "Switzerland",
+          "label": {
+            "en": "Switzerland",
+            "fr": "Suisse",
+            "de": "Schweiz",
+            "es": "Suiza"
+          }
+        },
+        {
+          "value": "United Kingdom",
+          "label": {
+            "en": "United Kingdom",
+            "fr": "Royaume-Uni",
+            "de": "Vereinigtes Königreich",
+            "es": "Reino Unido"
+          }
+        },
+        {
+          "value": "United States of America",
+          "label": {
+            "en": "United States",
+            "fr": "États-Unis",
+            "de": "Vereinigte Staaten",
+            "es": "Estados Unidos"
+          }
+        },
+        {
+          "value": "Uruguay",
+          "label": {
+            "en": "Uruguay",
+            "fr": "Uruguay",
+            "de": "Uruguay",
+            "es": "Uruguay"
+          }
+        }
+      ],
+      "label": {
+        "en": "Country",
+        "fr": "Pays",
+        "de": "Land",
+        "es": "País"
+      }
+    },
+    {
+      "key": "city_3",
       "type": "string",
-      "label": { "en": "Name", "fr": "Nom", "de": "Name", "es": "Nombre" }
+      "label": {
+        "en": "Town",
+        "fr": "Commune",
+        "de": "Ort",
+        "es": "Municipio"
+      },
+      "placeholder": {
+        "en": "Bordeaux",
+        "fr": "Bordeaux",
+        "de": "Köln",
+        "es": "Bordeaux"
+      }
+    },
+    {
+      "key": "postcode_3",
+      "type": "string",
+      "label": {
+        "en": "Postcode",
+        "fr": "Code postal",
+        "de": "Postleitzahl",
+        "es": "Código postal"
+      },
+      "placeholder": {
+        "en": "33000",
+        "fr": "33000",
+        "de": "50667",
+        "es": "33000"
+      }
+    },
+    {
+      "key": "street_3",
+      "type": "string",
+      "label": {
+        "en": "Street",
+        "fr": "Rue",
+        "de": "Straße",
+        "es": "Calle"
+      },
+      "placeholder": {
+        "en": "Cours Pasteur",
+        "fr": "Cours Pasteur",
+        "de": "Domstraße",
+        "es": "Cours Pasteur"
+      }
+    },
+    {
+      "key": "number_3",
+      "type": "string",
+      "label": {
+        "en": "Number",
+        "fr": "Numéro",
+        "de": "Hausnummer",
+        "es": "Número"
+      },
+      "placeholder": {
+        "en": "20",
+        "fr": "20",
+        "de": "20",
+        "es": "20"
+      }
     },
     {
       "key": "source_3",
       "type": "string",
-      "label": { "en": "Source", "fr": "Source", "de": "Quelle", "es": "Fuente" }
+      "label": {
+        "en": "Source (optional)",
+        "fr": "Source (facultatif)",
+        "de": "Quelle (optional)",
+        "es": "Fuente (opcional)"
+      },
+      "description": {
+        "en": "Leave empty: the source is found from the town. Fill it in only if the town is not enough, with a name given by \"Find a source\".",
+        "fr": "Laissez vide : la source est trouvée à partir de la commune. Remplissez-la seulement si la commune ne suffit pas, avec un nom donné par « Trouver une source ».",
+        "de": "Leer lassen: Die Quelle wird über den Ort gefunden. Nur ausfüllen, wenn der Ort nicht reicht, mit einem Namen aus „Quelle suchen“.",
+        "es": "Déjelo vacío: la fuente se encuentra a partir del municipio. Rellénela solo si el municipio no basta, con un nombre dado por «Buscar una fuente»."
+      },
+      "placeholder": {
+        "en": "Grand Besançon Métropole",
+        "fr": "Grand Besançon Métropole",
+        "de": "Grand Besançon Métropole",
+        "es": "Grand Besançon Métropole"
+      }
+    },
+    {
+      "key": "url_3",
+      "type": "string",
+      "label": {
+        "en": "ICS link (optional)",
+        "fr": "Lien ICS (facultatif)",
+        "de": "ICS-Link (optional)",
+        "es": "Enlace ICS (opcional)"
+      },
+      "description": {
+        "en": "The calendar link of your town hall, if your town has no source.",
+        "fr": "Le lien du calendrier de votre mairie, si votre commune n’a pas de source.",
+        "de": "Der Kalenderlink Ihrer Gemeinde, falls Ihr Ort keine Quelle hat.",
+        "es": "El enlace del calendario de su ayuntamiento, si su municipio no tiene fuente."
+      },
+      "placeholder": {
+        "en": "https://…/calendar.ics",
+        "fr": "https://…/calendrier.ics",
+        "de": "https://…/kalender.ics",
+        "es": "https://…/calendario.ics"
+      }
     },
     {
       "key": "args_3",
       "type": "string",
-      "label": { "en": "Arguments", "fr": "Arguments", "de": "Argumente", "es": "Argumentos" }
+      "label": {
+        "en": "Advanced parameters",
+        "fr": "Paramètres avancés",
+        "de": "Erweiterte Parameter",
+        "es": "Parámetros avanzados"
+      },
+      "description": {
+        "en": "Rarely needed: only when \"Test the schedules\" asks for a parameter that is not above.",
+        "fr": "Rarement utile : seulement si « Tester les calendriers » demande un paramètre absent ci-dessus.",
+        "de": "Selten nötig: nur wenn „Abfuhrpläne testen“ einen Parameter verlangt, der oben fehlt.",
+        "es": "Rara vez necesario: solo si «Probar los calendarios» pide un parámetro que no está arriba."
+      },
+      "placeholder": {
+        "en": "uprn=100090123456; zone=north",
+        "fr": "secteur=nord; zone=2",
+        "de": "bezirk=Nord; zone=2",
+        "es": "zona=norte; sector=2"
+      }
     },
     {
       "key": "waste_types",
@@ -171,7 +1427,12 @@
     {
       "key": "rename",
       "type": "string",
-      "label": { "en": "Rename", "fr": "Renommer", "de": "Umbenennen", "es": "Renombrar" },
+      "label": {
+        "en": "Rename",
+        "fr": "Renommer",
+        "de": "Umbenennen",
+        "es": "Renombrar"
+      },
       "placeholder": {
         "en": "Tri sélectif=Yellow bin; Ordures ménagères=Grey bin",
         "fr": "Tri sélectif=Bac jaune; Ordures ménagères=Bac gris",
@@ -182,7 +1443,12 @@
     {
       "key": "hide",
       "type": "string",
-      "label": { "en": "Hide", "fr": "Masquer", "de": "Ausblenden", "es": "Ocultar" },
+      "label": {
+        "en": "Hide",
+        "fr": "Masquer",
+        "de": "Ausblenden",
+        "es": "Ocultar"
+      },
       "placeholder": {
         "en": "Christmas trees; Bulky waste",
         "fr": "Sapins de Noël; Encombrants",
@@ -193,7 +1459,12 @@
     {
       "key": "reminders",
       "type": "section",
-      "label": { "en": "Reminders", "fr": "Rappels", "de": "Erinnerungen", "es": "Avisos" },
+      "label": {
+        "en": "Reminders",
+        "fr": "Rappels",
+        "de": "Erinnerungen",
+        "es": "Avisos"
+      },
       "description": {
         "en": "Time of the scene triggers \"Collection tomorrow\" (the evening before) and \"Collection today\" (the morning of the collection).",
         "fr": "Heure des déclencheurs de scène « Collecte demain » (la veille au soir) et « Collecte aujourd’hui » (le matin de la collecte).",
@@ -214,35 +1485,75 @@
       "options": [
         {
           "value": "16:00",
-          "label": { "en": "16:00", "fr": "16 h", "de": "16:00", "es": "16:00" }
+          "label": {
+            "en": "16:00",
+            "fr": "16 h",
+            "de": "16:00",
+            "es": "16:00"
+          }
         },
         {
           "value": "17:00",
-          "label": { "en": "17:00", "fr": "17 h", "de": "17:00", "es": "17:00" }
+          "label": {
+            "en": "17:00",
+            "fr": "17 h",
+            "de": "17:00",
+            "es": "17:00"
+          }
         },
         {
           "value": "18:00",
-          "label": { "en": "18:00", "fr": "18 h", "de": "18:00", "es": "18:00" }
+          "label": {
+            "en": "18:00",
+            "fr": "18 h",
+            "de": "18:00",
+            "es": "18:00"
+          }
         },
         {
           "value": "19:00",
-          "label": { "en": "19:00", "fr": "19 h", "de": "19:00", "es": "19:00" }
+          "label": {
+            "en": "19:00",
+            "fr": "19 h",
+            "de": "19:00",
+            "es": "19:00"
+          }
         },
         {
           "value": "20:00",
-          "label": { "en": "20:00", "fr": "20 h", "de": "20:00", "es": "20:00" }
+          "label": {
+            "en": "20:00",
+            "fr": "20 h",
+            "de": "20:00",
+            "es": "20:00"
+          }
         },
         {
           "value": "21:00",
-          "label": { "en": "21:00", "fr": "21 h", "de": "21:00", "es": "21:00" }
+          "label": {
+            "en": "21:00",
+            "fr": "21 h",
+            "de": "21:00",
+            "es": "21:00"
+          }
         },
         {
           "value": "22:00",
-          "label": { "en": "22:00", "fr": "22 h", "de": "22:00", "es": "22:00" }
+          "label": {
+            "en": "22:00",
+            "fr": "22 h",
+            "de": "22:00",
+            "es": "22:00"
+          }
         },
         {
           "value": "off",
-          "label": { "en": "Off", "fr": "Désactivé", "de": "Aus", "es": "Desactivado" }
+          "label": {
+            "en": "Off",
+            "fr": "Désactivé",
+            "de": "Aus",
+            "es": "Desactivado"
+          }
         }
       ]
     },
@@ -257,25 +1568,80 @@
       },
       "default": "06:00",
       "options": [
-        { "value": "05:00", "label": { "en": "05:00", "fr": "5 h", "de": "05:00", "es": "05:00" } },
-        { "value": "06:00", "label": { "en": "06:00", "fr": "6 h", "de": "06:00", "es": "06:00" } },
-        { "value": "07:00", "label": { "en": "07:00", "fr": "7 h", "de": "07:00", "es": "07:00" } },
-        { "value": "08:00", "label": { "en": "08:00", "fr": "8 h", "de": "08:00", "es": "08:00" } },
-        { "value": "09:00", "label": { "en": "09:00", "fr": "9 h", "de": "09:00", "es": "09:00" } },
+        {
+          "value": "05:00",
+          "label": {
+            "en": "05:00",
+            "fr": "5 h",
+            "de": "05:00",
+            "es": "05:00"
+          }
+        },
+        {
+          "value": "06:00",
+          "label": {
+            "en": "06:00",
+            "fr": "6 h",
+            "de": "06:00",
+            "es": "06:00"
+          }
+        },
+        {
+          "value": "07:00",
+          "label": {
+            "en": "07:00",
+            "fr": "7 h",
+            "de": "07:00",
+            "es": "07:00"
+          }
+        },
+        {
+          "value": "08:00",
+          "label": {
+            "en": "08:00",
+            "fr": "8 h",
+            "de": "08:00",
+            "es": "08:00"
+          }
+        },
+        {
+          "value": "09:00",
+          "label": {
+            "en": "09:00",
+            "fr": "9 h",
+            "de": "09:00",
+            "es": "09:00"
+          }
+        },
         {
           "value": "10:00",
-          "label": { "en": "10:00", "fr": "10 h", "de": "10:00", "es": "10:00" }
+          "label": {
+            "en": "10:00",
+            "fr": "10 h",
+            "de": "10:00",
+            "es": "10:00"
+          }
         },
         {
           "value": "off",
-          "label": { "en": "Off", "fr": "Désactivé", "de": "Aus", "es": "Desactivado" }
+          "label": {
+            "en": "Off",
+            "fr": "Désactivé",
+            "de": "Aus",
+            "es": "Desactivado"
+          }
         }
       ]
     },
     {
       "key": "advanced",
       "type": "section",
-      "label": { "en": "Advanced", "fr": "Avancé", "de": "Erweitert", "es": "Avanzado" }
+      "label": {
+        "en": "Advanced",
+        "fr": "Avancé",
+        "de": "Erweitert",
+        "es": "Avanzado"
+      }
     },
     {
       "key": "refresh_hours",
@@ -290,15 +1656,30 @@
       "options": [
         {
           "value": "6",
-          "label": { "en": "6 hours", "fr": "6 heures", "de": "6 Stunden", "es": "6 horas" }
+          "label": {
+            "en": "6 hours",
+            "fr": "6 heures",
+            "de": "6 Stunden",
+            "es": "6 horas"
+          }
         },
         {
           "value": "12",
-          "label": { "en": "12 hours", "fr": "12 heures", "de": "12 Stunden", "es": "12 horas" }
+          "label": {
+            "en": "12 hours",
+            "fr": "12 heures",
+            "de": "12 Stunden",
+            "es": "12 horas"
+          }
         },
         {
           "value": "24",
-          "label": { "en": "24 hours", "fr": "24 heures", "de": "24 Stunden", "es": "24 horas" }
+          "label": {
+            "en": "24 hours",
+            "fr": "24 heures",
+            "de": "24 Stunden",
+            "es": "24 horas"
+          }
         }
       ]
     },
@@ -315,19 +1696,39 @@
       "options": [
         {
           "value": "en",
-          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
         },
         {
           "value": "fr",
-          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
         },
         {
           "value": "de",
-          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
         },
         {
           "value": "es",
-          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
         }
       ]
     }
@@ -342,10 +1743,10 @@
         "es": "Buscar una fuente"
       },
       "description": {
-        "en": "Search the sources by town, operator or country, and get the source and arguments to copy.",
-        "fr": "Cherche parmi les sources par commune, organisme ou pays, et donne la source et les arguments à recopier.",
-        "de": "Durchsucht die Quellen nach Ort, Entsorger oder Land und liefert Quelle und Argumente zum Übernehmen.",
-        "es": "Busca entre las fuentes por municipio, operador o país, y da la fuente y los argumentos que debe copiar."
+        "en": "Search the sources by town, operator or country: what each one needs, and its name for Source when the town is not enough.",
+        "fr": "Cherche parmi les sources par commune, organisme ou pays : ce que chacune demande, et son nom pour Source quand la commune ne suffit pas.",
+        "de": "Durchsucht die Quellen nach Ort, Entsorger oder Land: was jede braucht und ihr Name für Quelle, wenn der Ort nicht reicht.",
+        "es": "Busca entre las fuentes por municipio, operador o país: lo que pide cada una y su nombre para Fuente cuando el municipio no basta."
       },
       "timeout_seconds": 30,
       "fields": [
@@ -358,7 +1759,12 @@
             "de": "Ort, Entsorger oder Land",
             "es": "Municipio, operador o país"
           },
-          "placeholder": { "en": "Bordeaux", "fr": "Bordeaux", "de": "Bordeaux", "es": "Bordeaux" },
+          "placeholder": {
+            "en": "Bordeaux",
+            "fr": "Bordeaux",
+            "de": "Bordeaux",
+            "es": "Bordeaux"
+          },
           "required": true
         }
       ]
@@ -410,7 +1816,12 @@
           "options": [
             {
               "value": "all",
-              "label": { "en": "All", "fr": "Tous", "de": "Alle", "es": "Todos" }
+              "label": {
+                "en": "All",
+                "fr": "Tous",
+                "de": "Alle",
+                "es": "Todos"
+              }
             },
             {
               "value": "1",
@@ -452,9 +1863,33 @@
           },
           "default": "5",
           "options": [
-            { "value": "3", "label": { "en": "3", "fr": "3", "de": "3", "es": "3" } },
-            { "value": "5", "label": { "en": "5", "fr": "5", "de": "5", "es": "5" } },
-            { "value": "8", "label": { "en": "8", "fr": "8", "de": "8", "es": "8" } }
+            {
+              "value": "3",
+              "label": {
+                "en": "3",
+                "fr": "3",
+                "de": "3",
+                "es": "3"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "en": "5",
+                "fr": "5",
+                "de": "5",
+                "es": "5"
+              }
+            },
+            {
+              "value": "8",
+              "label": {
+                "en": "8",
+                "fr": "8",
+                "de": "8",
+                "es": "8"
+              }
+            }
           ]
         },
         {
@@ -842,12 +2277,22 @@
         {
           "key": "source",
           "type": "string",
-          "label": { "en": "Source", "fr": "Source", "de": "Quelle", "es": "Fuente" }
+          "label": {
+            "en": "Source",
+            "fr": "Source",
+            "de": "Quelle",
+            "es": "Fuente"
+          }
         },
         {
           "key": "error",
           "type": "string",
-          "label": { "en": "Error", "fr": "Erreur", "de": "Fehler", "es": "Error" }
+          "label": {
+            "en": "Error",
+            "fr": "Erreur",
+            "de": "Fehler",
+            "es": "Error"
+          }
         }
       ]
     }
@@ -882,7 +2327,12 @@
           "options": [
             {
               "value": "all",
-              "label": { "en": "All", "fr": "Tous", "de": "Alle", "es": "Todos" }
+              "label": {
+                "en": "All",
+                "fr": "Tous",
+                "de": "Alle",
+                "es": "Todos"
+              }
             },
             {
               "value": "1",
@@ -922,7 +2372,12 @@
             "de": "Abfallart (optional)",
             "es": "Tipo de residuo (opcional)"
           },
-          "placeholder": { "en": "glass", "fr": "verre", "de": "glas", "es": "vidrio" }
+          "placeholder": {
+            "en": "glass",
+            "fr": "verre",
+            "de": "glas",
+            "es": "vidrio"
+          }
         }
       ],
       "outputs": [
@@ -1007,7 +2462,12 @@
           "options": [
             {
               "value": "all",
-              "label": { "en": "All", "fr": "Tous", "de": "Alle", "es": "Todos" }
+              "label": {
+                "en": "All",
+                "fr": "Tous",
+                "de": "Alle",
+                "es": "Todos"
+              }
             },
             {
               "value": "1",
@@ -1043,12 +2503,22 @@
         {
           "key": "success",
           "type": "boolean",
-          "label": { "en": "Success", "fr": "Réussite", "de": "Erfolg", "es": "Éxito" }
+          "label": {
+            "en": "Success",
+            "fr": "Réussite",
+            "de": "Erfolg",
+            "es": "Éxito"
+          }
         },
         {
           "key": "error",
           "type": "string",
-          "label": { "en": "Error", "fr": "Erreur", "de": "Fehler", "es": "Error" }
+          "label": {
+            "en": "Error",
+            "fr": "Erreur",
+            "de": "Fehler",
+            "es": "Error"
+          }
         },
         {
           "key": "next_date",

@@ -1,11 +1,16 @@
 // -----------------------------------------------------------------------------
 // Configuration: the values of the config_schema, normalized.
 //
-// Three schedule slots (`name_<n>`, `source_<n>`, `args_<n>`): a slot is a
-// Waste Collection Schedule source and its arguments, exactly what Home
-// Assistant users write under `sources:` in YAML. A slot number is the
-// identity of its calendar and of its widget filter: changing the
-// arguments of a slot (a typo, a move) keeps them.
+// Three schedule slots: a house of Gladys (its name names the calendar), a
+// country, an address (`city_<n>`, `postcode_<n>`, `street_<n>`,
+// `number_<n>`, `url_<n>`), an optional source (a title or a module name;
+// empty, the engine finds it from the town) and advanced `key=value`
+// arguments (`args_<n>`, JSON still read: the configurations written before
+// the address fields). The engine maps the address onto the parameters of
+// the source (python/bridge.py). A slot number is the identity of its
+// calendar and of its widget filter: changing the address of a slot (a typo,
+// a move) keeps them. `name_<n>` is no longer in the form but still names a
+// schedule without a house.
 // -----------------------------------------------------------------------------
 
 import { LANGUAGES } from './i18n.js';
@@ -21,7 +26,13 @@ export const DEFAULT_REMINDER = '19:00';
 export const DEFAULT_MORNING = '06:00';
 export const OFF = 'off';
 
-const MODULE = /^[A-Za-z0-9_-]{1,100}$/;
+export const ADDRESS_FIELDS = ['city', 'postcode', 'street', 'number', 'url'];
+const MAX_TEXT = 300;
+
+const field = (raw, key) =>
+  String(raw[key] ?? '')
+    .trim()
+    .slice(0, MAX_TEXT);
 
 /**
  * @description Parse the arguments of a source: a JSON object, or
@@ -105,21 +116,31 @@ export function parseList(raw) {
 export function normalizeConfig(raw = {}) {
   const slots = [];
   for (const slot of SLOTS) {
-    const source = String(raw[`source_${slot}`] ?? '').trim();
-    if (!source) {
+    const source = field(raw, `source_${slot}`);
+    const country = field(raw, `country_${slot}`);
+    const address = Object.fromEntries(
+      ADDRESS_FIELDS.map((key) => [key, field(raw, `${key}_${slot}`)]).filter(([, value]) => value),
+    );
+    const { args, error } = parseArgs(raw[`args_${slot}`]);
+    // A house alone, or a street without a town, is not a schedule yet.
+    if (!source && !address.city && !address.url && !(args && Object.keys(args).length)) {
       continue;
     }
-    const { args, error } = parseArgs(raw[`args_${slot}`]);
-    const name = String(raw[`name_${slot}`] ?? '').trim();
+    const legacyName = field(raw, `name_${slot}`);
     slots.push({
       slot,
-      name: name || null,
+      house: field(raw, `house_${slot}`) || null,
+      legacyName: legacyName || null,
+      // Set by the app: the house name, else legacyName (see app.js names()).
+      name: legacyName || null,
       source,
+      country,
+      address,
       args,
       // A configuration problem found before calling the engine.
-      configError: !MODULE.test(source) ? 'module' : error,
+      configError: error,
       // What the cached data was fetched with: another value means fetch again.
-      signature: JSON.stringify([source, args]),
+      signature: JSON.stringify([source, country, address, args]),
     });
   }
   const language = LANGUAGES.includes(raw.language) ? raw.language : 'en';

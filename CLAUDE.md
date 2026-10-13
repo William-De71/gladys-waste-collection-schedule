@@ -42,9 +42,11 @@ scripts/build-cover.sh                    # cover.jpg from cover.svg (Inkscape, 
 index.js                     SDK wiring only: createApp(gladys, { bridge, store }) + connect
 src/app.js                   every handler, the one-minute tick, the publications
 src/bridge.js                spawns python/bridge.py: one process at a time, timeout, minimal env
-python/bridge.py             fetch / search / version over stdin-stdout JSON
+python/bridge.py             fetch / search / version over stdin-stdout JSON; finds the source
+                             from the town, maps the address onto its parameters, INSEE code
 python/check_sources.py      smoke test: every bundled source imports (CI, wcs-update.yml)
-src/config.js                config_schema -> slots (source, JSON or key=value arguments), renames
+src/config.js                config_schema -> slots (house, country, address, source, advanced
+                             key=value arguments), renames
 src/schedule.js              collections: window, renames, hidden types, next ones, type keys
 src/store.js                 /data/state.json: raw dates per slot, errors, reminders fired
 src/calendar.js              one calendar per slot and user, windows of 500 events
@@ -67,7 +69,9 @@ src/time.js                  calendar dates in the timezone of the house (TZ)
 - **Scene events** on transitions only, flat scalar data; `fetch_failed`
   never after a refresh asked by a scene action (loop risk).
 - **The engine**: never pass the Gladys token or anything from the config but
-  the source and its arguments to Python. One process at a time (256 MB for
+  the source, the country, the address and the advanced arguments to Python.
+  The INSEE lookup (geo.api.gouv.fr) sends the town and the postcode, never
+  the street. One process at a time (256 MB for
   Node and Python together). A new Python import of a source = a line in
   `python/requirements.txt` (the CI smoke test catches it).
 - **Upstream library**: update it only through `wcs-update.yml` (version and
@@ -77,6 +81,12 @@ src/time.js                  calendar dates in the timezone of the house (TZ)
 - **Widget content**: after any change, run `docs/illustrations/render.sh` and
   look at the four images; card dates are `YYYY-MM-DDT00:00:00.000Z` (shown
   as a calendar day by the Gladys front).
+- **The form**: no JSON for the user. The address fields are mapped onto the
+  parameters of the source by exact names (`FIELD_PARAMS` in
+  python/bridge.py, mirrored by `FIELD_MESSAGES` in src/app.js); a tie
+  between sources is an `ambiguous` error listing them, never a guess. The
+  schedule is named after its house (`location: true`, GET /house); `name_<n>`
+  left the form but is still read.
 - **User-facing text** exists in en, fr, de and es: manifest, `src/i18n.js`,
   `docs/*.md`, `README*.md`. `test/i18n.test.js` checks it. Use the words of
   the Gladys UI (Discover / Découverte / Entdecken / Descubrir…).
@@ -90,6 +100,10 @@ src/time.js                  calendar dates in the timezone of the house (TZ)
 
 ## Pitfalls
 
+- The store refuses a manifest over 100 KB: the ~3,800 sources cannot be a
+  select (that is why the source is found from the town). The countries of
+  the three `country_<n>` selects must match `sources.json`
+  (python/check_sources.py checks it in the CI and in wcs-update.yml).
 - A card `date` other than midnight UTC is shown with a time by the Gladys
   front.
 - Waste types have no identifier upstream: event ids use the type name.

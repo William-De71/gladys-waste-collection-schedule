@@ -49,12 +49,62 @@ test('configuration: slots, renames, reminder times, defaults', () => {
     refresh_hours: '24',
     language: 'de',
   });
+  // A source that is not a module is a title to search (bridge.py checks it).
   assert.deepEqual(
     config.slots.map((slot) => [slot.slot, slot.source, slot.configError]),
     [
       ['1', 'ics', null],
-      ['3', '../evil', 'module'],
+      ['3', '../evil', null],
     ],
+  );
+
+  const form = normalizeConfig({
+    house_1: 'main-house',
+    country_1: 'France',
+    city_1: ' Besançon ',
+    street_1: 'Rue Haute',
+    number_1: '',
+    args_1: 'zone=north',
+    house_2: 'main-house',
+    street_2: 'Rue Haute',
+    url_3: 'https://example.org/verre.ics',
+    name_3: 'Verre',
+  });
+  assert.deepEqual(
+    form.slots.map(({ slot, house, name, source, country, address, args }) => ({
+      slot,
+      house,
+      name,
+      source,
+      country,
+      address,
+      args,
+    })),
+    [
+      {
+        slot: '1',
+        house: 'main-house',
+        name: null,
+        source: '',
+        country: 'France',
+        address: { city: 'Besançon', street: 'Rue Haute' },
+        args: { zone: 'north' },
+      },
+      // Schedule 2, a house and a street without a town: not a schedule yet.
+      {
+        slot: '3',
+        house: null,
+        name: 'Verre',
+        source: '',
+        country: '',
+        address: { url: 'https://example.org/verre.ics' },
+        args: {},
+      },
+    ],
+  );
+  assert.notEqual(
+    form.slots[0].signature,
+    normalizeConfig({ city_1: 'Besançon' }).slots[0].signature,
   );
   assert.deepEqual([...config.renames], [['tri sélectif', 'Bac jaune']]);
   assert.deepEqual([...config.hidden], ['sapins de noël', 'encombrants']);

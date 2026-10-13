@@ -11,16 +11,17 @@ export const TZ = 'Europe/Paris';
 
 /**
  * @description A fake engine answering like python/bridge.py.
- * @param {object} answers - `source -> answer object | (args) => answer`.
+ * @param {object} answers - `source or town -> answer object | (args) => answer`.
  * @returns {object} The bridge, with `calls`.
  */
 export function fakeBridge(answers = {}) {
   const calls = [];
   return {
     calls,
-    async fetch(source, args) {
-      calls.push({ command: 'fetch', source, args });
-      const answer = answers[source];
+    async fetch({ source, country, address = {}, args }) {
+      calls.push({ command: 'fetch', source, country, address, args });
+      // Keyed by the source, else by the town or the ICS link, like bridge.py finds it.
+      const answer = answers[source || address.city || (address.url ? 'ics' : '')];
       if (answer === undefined) {
         return { ok: false, kind: 'not_found', error: `unknown source: ${source}` };
       }

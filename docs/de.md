@@ -12,38 +12,41 @@ Die Termine stammen aus [Waste Collection Schedule](https://github.com/mampfes/h
 
 ![Das Widget „Nächste Abholungen“, mit einem Abfuhrplan und dann mit zweien (generierte Illustration, kein Bildschirmfoto)](https://raw.githubusercontent.com/William-De71/gladys-waste-collection-schedule/main/docs/assets/widgets.de.png)
 
-**Transport: Cloud.** Der Container fragt die Website oder die API Ihrer Quelle von Ihrem Gladys aus ab, standardmäßig alle 12 Stunden. Ihre Adresse (oder was die Quelle braucht: Straße, Hausnummer, Kalenderlink) geht an diese Quelle und an niemanden sonst. Nichts läuft über einen Gladys-Server.
+**Transport: Cloud.** Der Container fragt die Website oder die API Ihrer Quelle von Ihrem Gladys aus ab, standardmäßig alle 12 Stunden. Ihre Adresse (oder was die Quelle braucht: Straße, Hausnummer, Kalenderlink) geht an diese Quelle und an niemanden sonst. Für die wenigen französischen Quellen, die einen INSEE-Code brauchen, werden Ort und Postleitzahl (nie die Straße) zusätzlich an [geo.api.gouv.fr](https://geo.api.gouv.fr), die öffentliche API des französischen Staates, gesendet, um ihn zu ermitteln. Nichts läuft über einen Gladys-Server. Die Integration liest die Häuser von Gladys (Standort-Berechtigung) nur wegen ihrer Namen.
 
 ## Voraussetzungen
 
 - Gladys Assistant 5.2.0 oder neuer (Kalender-Integrationen).
 - Ihr Gladys erreicht das Internet.
-- Eine Quelle für Ihre Adresse. Sehen Sie in der [Liste der Quellen](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers) nach oder nutzen Sie die Schaltfläche **Quelle suchen** auf der Konfigurationsseite. Keine Quelle für Ihren Ort? Die Quelle **ics** liest jeden Kalenderlink (`.ics`, `webcal://`), den Ihre Gemeinde oder Ihr Entsorger veröffentlicht.
+- Eine Quelle für Ihre Adresse: Die meisten Orte werden allein über ihren Namen gefunden. Sehen Sie in der [Liste der Quellen](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers) nach oder nutzen Sie die Schaltfläche **Quelle suchen** auf der Konfigurationsseite. Keine Quelle für Ihren Ort? Fügen Sie den Kalenderlink (`.ics`, `webcal://`) Ihrer Gemeinde oder Ihres Entsorgers unter **ICS-Link** ein.
 
 ## Konfiguration
 
-Ein Administrator richtet die Quellen einmal für den ganzen Haushalt ein.
-
-### Quelle und Argumente finden
-
-1. Öffnen Sie **Integrationen → Waste Collection Schedule → Konfiguration**.
-2. Geben Sie unten auf der Seite bei **Quelle suchen** den Namen Ihres Ortes oder Ihres Entsorgers ein und starten Sie die Suche. Die Antwort listet die passenden Quellen auf, mit der zu übernehmenden **Quelle**, den bereits bekannten **Argumenten**, den noch fehlenden und der Dokumentation der Quelle.
-3. Lesen Sie die Dokumentation der Quelle: Sie erklärt jedes Argument (Straße, Hausnummer, eine Kennung von der Website des Entsorgers).
+Ein Administrator richtet die Abfuhrpläne einmal für den ganzen Haushalt ein.
 
 ### Einen Abfuhrplan ausfüllen
 
-| Feld      | Was eintragen                                                                                                                                                   |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Name      | ein Name für den Abfuhrplan, angezeigt im Kalender, im Widget und in den Szenen (zum Beispiel „Zuhause“)                                                        |
-| Quelle    | der Name der Quelle, zum Beispiel `ics` oder `awido_de`                                                                                                         |
-| Argumente | ein JSON-Objekt, zum Beispiel `{"customer": "gifhorn", "city": "Hankensbüttel", "street": "Allersehl"}`, oder Paare `schlüssel=wert`, getrennt durch Semikolons |
+1. Öffnen Sie **Integrationen → Waste Collection Schedule → Konfiguration**.
+2. Füllen Sie unter **Abfuhrplan 1** aus:
 
-Beispiele:
+| Feld                 | Was eintragen                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------ |
+| Haus                 | das Haus von Gladys: sein Name benennt Kalender, Widget und Szenentexte                                |
+| Land                 | das Land der Adresse: Dort wird die Quelle gesucht                                                     |
+| Ort                  | Ihr Ort: Die Quelle wird darüber gefunden (zum Beispiel Köln, Bordeaux, Wien)                          |
+| Postleitzahl         | Ihre Postleitzahl, wenn die Quelle sie verlangt                                                        |
+| Straße, Hausnummer   | Ihre Adresse, wenn die Quelle sie verlangt                                                             |
+| Quelle (optional)    | leer lassen; siehe unten, wenn der Ort nicht reicht                                                    |
+| ICS-Link (optional)  | ein Kalenderlink Ihrer Gemeinde, für einen Ort ohne Quelle                                             |
+| Erweiterte Parameter | selten nötig: Paare `schlüssel=wert`, getrennt durch Semikolons, für einen Parameter ohne eigenes Feld |
 
-- ein ICS-Link: Quelle `ics`, Argumente `{"url": "https://example.org/abfuhr.ics"}`;
-- Bordeaux Métropole: Quelle `opendata_bordeauxmetropole_fr`, Argumente `{"city": "Bordeaux", "address": "20 Cours Pasteur"}`.
+3. Speichern Sie und drücken Sie dann **Abfuhrpläne testen**: für jeden Abfuhrplan, wie viele Termine und welche Abfallarten die Quelle geliefert hat, oder was fehlt („Grand Besançon Métropole braucht außerdem: Straße“). Ein französischer INSEE-Code wird automatisch über den Ort ermittelt.
 
-Bis zu drei Abfuhrpläne: ein Ferienhaus oder eine zweite Quelle für dieselbe Adresse (die Gemeinde für die meisten Tonnen und ein ICS-Link für Glas). Speichern Sie und drücken Sie dann **Abfuhrpläne testen**: Die Antwort nennt für jeden Abfuhrplan, wie viele Termine und welche Abfallarten die Quelle geliefert hat, oder was nicht stimmt.
+Bis zu drei Abfuhrpläne: ein Ferienhaus oder eine zweite Quelle für dasselbe Haus (die Gemeinde für die meisten Tonnen und ein ICS-Link für Glas). Zwei Abfuhrpläne desselben Hauses zeigen ihre Quelle in Klammern.
+
+### Wenn der Ort nicht reicht
+
+Manche Orte werden von einem Entsorger mit anderem Namen bedient (ein Ort eines Landkreises), und manche Namen passen zu mehreren Quellen. **Abfuhrpläne testen** sagt das dann und listet die Kandidaten auf. Geben Sie Ihren Ort oder Entsorger unten auf der Seite unter **Quelle suchen** ein: Die Antwort listet die passenden Quellen, was jede braucht (mit den Namen der Felder oben) und ihre Dokumentation. Übernehmen Sie den Namen Ihrer Quelle unter **Quelle**, zum Beispiel `AWM München`.
 
 ### Abfallarten, Erinnerungen und Aktualisierung
 
@@ -94,8 +97,10 @@ Jeder Auslöser lässt sich nach einem Abfuhrplan filtern. Eine Erinnerung kommt
 
 ## Fehlerbehebung
 
-- **Unbekannte Quelle**: Prüfen Sie die Schreibweise der Quelle (Kleinbuchstaben, Unterstriche), so wie **Quelle suchen** sie angibt.
-- **Ungültige Argumente**: Die Meldung von **Abfuhrpläne testen** nennt das betroffene Argument und schlägt, wenn die Quelle sie kennt, die richtigen Werte vor (Straßennamen, Orte).
+- **Keine Quelle gefunden**: Prüfen Sie das Land oder tragen Sie den Namen Ihres Entsorgers unter **Quelle** ein, so wie **Quelle suchen** ihn angibt.
+- **Mehrere Quellen passen**: Übernehmen Sie die richtige aus der Liste der Meldung unter **Quelle**.
+- **Ein Wert fehlt**: Die Meldung von **Abfuhrpläne testen** nennt das auszufüllende Feld; ein Parameter ohne Feld kommt als `schlüssel=wert` unter **Erweiterte Parameter**. Wenn die Quelle sie kennt, schlägt die Meldung die richtigen Werte vor (Straßennamen, Orte).
+- **INSEE-Code**: Ort nicht gefunden oder mehrere Orte gleichen Namens: Geben Sie die Postleitzahl an.
 - **Die Quelle ist fehlgeschlagen** oder **hat zu lange gebraucht**: Die Website der Quelle ist gestört oder hat sich geändert, oder sie findet Ihre Adresse nicht mehr. Die Integration versucht es nach 15 Minuten erneut, dann immer seltener, und behält in der Zwischenzeit die letzten bekannten Termine. Hält es an, prüfen Sie, ob die Quelle in Home Assistant funktioniert: Falls nicht, melden Sie es bei [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues); die Korrektur kommt mit einem Update der Integration.
 - **Falsche oder fehlende Termine**: Die Termine sind die der Quelle. Vergleichen Sie mit der Website Ihres Entsorgers und melden Sie Abweichungen dort, wo die Quelle gepflegt wird.
 - **Kein Kalender nach dem Aktivieren**: Die Kalender werden nach der ersten erfolgreichen Aktualisierung der Quellen übertragen; prüfen Sie, ob **Diesen Kalender synchronisieren** eingeschaltet ist.

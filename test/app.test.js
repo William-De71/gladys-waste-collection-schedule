@@ -341,8 +341,9 @@ test('configuration buttons: find a source, test the schedules', async () => {
           module: 'opendata_bordeauxmetropole_fr',
           default_params: { city: 'Bordeaux' },
           params: [
-            { name: 'address', required: true },
-            { name: 'city', required: true },
+            { name: 'address', required: true, field: 'address', label: null },
+            { name: 'city', required: true, field: 'city', label: null },
+            { name: 'zone', required: false, field: null, label: { en: 'Zone', fr: 'Secteur' } },
           ],
           docs_url:
             'https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/opendata_bordeauxmetropole_fr.md',
@@ -355,7 +356,7 @@ test('configuration buttons: find a source, test the schedules', async () => {
     const found = await fake.action('search_source', { query: 'Bordeaux' });
     assert.equal(
       found.data.message.fr,
-      '22 source(s) trouvée(s), les 1 premières :\nBordeaux (France) → source : opendata_bordeauxmetropole_fr · arguments : {"city":"Bordeaux"} · à compléter : address\n  https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/opendata_bordeauxmetropole_fr.md',
+      '22 source(s) trouvée(s), les 1 premières :\nBordeaux (France) · à remplir : Rue et numéro · facultatif : Secteur (zone=… dans Paramètres avancés)\n  https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/opendata_bordeauxmetropole_fr.md\nDans le calendrier, choisissez le pays et remplissez l’adresse. Si plusieurs sources desservent votre commune, recopiez le nom de la vôtre dans Source.',
     );
     const short = await fake.action('search_source', { query: 'B' });
     assert.match(short.data.message.en, /at least 2 characters/);
@@ -427,6 +428,111 @@ test('configuration: renames, hidden types, invalid arguments, removed schedule'
 
     await fake.configUpdated(CONFIG);
     assert.deepEqual(fake.deletedCalendars, []);
+  } finally {
+    cleanup();
+  }
+});
+
+test('the form: a house names the schedule, the address reaches the engine', async () => {
+  const config = {
+    house_1: 'main-house',
+    country_1: 'France',
+    city_1: 'Bordeaux',
+    street_1: 'Cours Pasteur',
+    number_1: '20',
+    house_2: 'main-house',
+    url_2: 'https://example.org/verre.ics',
+    language: 'fr',
+  };
+  const { fake, bridge, cleanup } = await setup({
+    config,
+    answers: { Bordeaux: OK, ics: { ...OK, title: 'Verre' } },
+    fake: {
+      houses: [
+        {
+          id: '1',
+          name: 'Maison principale',
+          selector: 'main-house',
+          latitude: null,
+          longitude: null,
+        },
+      ],
+    },
+  });
+  try {
+    assert.deepEqual(bridge.calls[0], {
+      command: 'fetch',
+      source: '',
+      country: 'France',
+      address: { city: 'Bordeaux', street: 'Cours Pasteur', number: '20' },
+      args: {},
+    });
+    assert.deepEqual(bridge.calls[1].address, { url: 'https://example.org/verre.ics' });
+    // One house, two schedules: the source tells them apart.
+    assert.deepEqual(
+      fake.publishedCalendars.at(-1).calendars.map((calendar) => calendar.name),
+      [
+        'Collecte des déchets – Maison principale (Bordeaux Métropole)',
+        'Collecte des déchets – Maison principale (Verre)',
+      ],
+    );
+
+    // A house renamed in Gladys: the next configuration change picks it up.
+    fake.houses[0].name = 'Chalet';
+    await fake.configUpdated({ ...config, house_2: '', name_2: 'Verre' });
+    assert.deepEqual(
+      fake.publishedCalendars.at(-1).calendars.map((calendar) => calendar.name),
+      ['Collecte des déchets – Chalet', 'Collecte des déchets – Verre'],
+    );
+  } finally {
+    cleanup();
+  }
+});
+
+test('the form: clear messages when the source is not found or needs more', async () => {
+  const config = {
+    country_1: 'France',
+    city_1: 'Paris',
+    city_2: 'Besançon',
+    source_3: 'Nowhere',
+    language: 'fr',
+  };
+  const { fake, cleanup } = await setup({
+    config,
+    answers: {
+      Paris: {
+        ok: false,
+        kind: 'ambiguous',
+        error: 'several sources for Paris',
+        query: 'Paris',
+        suggestions: ['Grand Paris Seine Ouest (France)', 'Grand Paris Sud Est Avenir (France)'],
+      },
+      Besançon: {
+        ok: false,
+        kind: 'missing',
+        error: 'missing: street, zone',
+        missing: [
+          { name: 'street', field: 'street', label: { en: 'Street', fr: 'Rue' } },
+          { name: 'zone', field: null, label: { en: 'Zone', fr: 'Secteur' } },
+        ],
+      },
+      Nowhere: { ok: false, kind: 'no_source', error: 'no source for Nowhere', query: 'Nowhere' },
+    },
+  });
+  try {
+    const tested = await fake.action('test_sources', {});
+    assert.deepEqual(tested.data.message.fr.split('\n'), [
+      'Calendrier 1 : ERREUR, plusieurs sources correspondent à « Paris », écrivez la bonne dans Source : Grand Paris Seine Ouest (France), Grand Paris Sud Est Avenir (France)',
+      'Calendrier 2 : ERREUR, Besançon a aussi besoin de : Rue, Secteur (zone=… dans Paramètres avancés)',
+      'Calendrier 3 : ERREUR, aucune source trouvée pour « Nowhere » : vérifiez le pays, ou écrivez le nom de votre organisme de collecte dans Source (le bouton « Trouver une source » aide)',
+    ]);
+    assert.equal(
+      tested.data.message.de.split('\n')[1],
+      'Abfuhrplan 2: FEHLER, Besançon braucht außerdem: Straße, Zone (zone=… unter Erweiterte Parameter)',
+    );
+    // A house alone is not a schedule yet.
+    await fake.configUpdated({ house_1: 'main-house', street_1: 'Rue Haute' });
+    assert.match(fake.connectionStatus.message.fr, /Aucune source configurée/);
   } finally {
     cleanup();
   }

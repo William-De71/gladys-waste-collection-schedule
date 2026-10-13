@@ -62,6 +62,8 @@ export function createBridge({
       HOME: dataDir,
       TMPDIR: tmpDir,
       WCS_LIB_DIR: libDir,
+      // Tests point the INSEE lookup at a local server.
+      ...(process.env.WCS_GEO_API ? { WCS_GEO_API: process.env.WCS_GEO_API } : {}),
       PYTHONDONTWRITEBYTECODE: '1',
       PYTHONUNBUFFERED: '1',
       ...(process.env.WCS_DEBUG ? { WCS_DEBUG: '1' } : {}),
@@ -135,7 +137,8 @@ export function createBridge({
 
   return {
     request,
-    fetch: (source, args) => request({ command: 'fetch', source, args }, FETCH_TIMEOUT_MS),
+    /** @param {{ source, country, address, args }} query - What a slot asks for. */
+    fetch: (query) => request({ command: 'fetch', ...query }, FETCH_TIMEOUT_MS),
     search: (query, limit = 6) => request({ command: 'search', query, limit }, SEARCH_TIMEOUT_MS),
     version: () => request({ command: 'version' }, SEARCH_TIMEOUT_MS),
   };

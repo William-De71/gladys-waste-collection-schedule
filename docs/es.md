@@ -12,38 +12,41 @@ Las fechas proceden de [Waste Collection Schedule](https://github.com/mampfes/ha
 
 ![El widget «Próximas recogidas», con un calendario y luego con dos (ilustración generada, no es una captura de pantalla)](https://raw.githubusercontent.com/William-De71/gladys-waste-collection-schedule/main/docs/assets/widgets.es.png)
 
-**Transporte: nube.** El contenedor consulta el sitio web o la API de su fuente desde su Gladys, cada 12 horas por defecto. Su dirección (o lo que necesite la fuente: una calle, un número, un enlace de calendario) se envía a esa fuente y a nadie más. Nada pasa por un servidor de Gladys.
+**Transporte: nube.** El contenedor consulta el sitio web o la API de su fuente desde su Gladys, cada 12 horas por defecto. Su dirección (o lo que necesite la fuente: una calle, un número, un enlace de calendario) se envía a esa fuente y a nadie más. Para las pocas fuentes francesas que piden un código INSEE, el municipio y su código postal (nunca la calle) se envían también a [geo.api.gouv.fr](https://geo.api.gouv.fr), la API pública del Estado francés, para obtenerlo. Nada pasa por un servidor de Gladys. La integración pide leer las casas de Gladys (permiso de ubicación) solo por sus nombres.
 
 ## Requisitos
 
 - Gladys Assistant 5.2.0 o posterior (integraciones de calendario).
 - Su Gladys tiene acceso a Internet.
-- Una fuente para su dirección. Consulte la [lista de fuentes](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers) o use el botón **Buscar una fuente** de la página de configuración. ¿No hay fuente para su municipio? La fuente **ics** lee cualquier enlace de calendario (`.ics`, `webcal://`) que publique su ayuntamiento o su operador.
+- Una fuente para su dirección: la mayoría de los municipios se encuentran solo con su nombre. Consulte la [lista de fuentes](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers) o use el botón **Buscar una fuente** de la página de configuración. ¿No hay fuente para su municipio? Pegue el enlace de calendario (`.ics`, `webcal://`) que publique su ayuntamiento o su operador en **Enlace ICS**.
 
 ## Configuración
 
-Un administrador configura las fuentes una sola vez, para todo el hogar.
-
-### Encontrar su fuente y sus argumentos
-
-1. Abra **Integraciones → Waste Collection Schedule → Configuración**.
-2. Al final de la página, escriba el nombre de su municipio o de su operador de residuos en **Buscar una fuente** y ejecútelo. La respuesta lista las fuentes que coinciden, con la **fuente** que debe copiar, los **argumentos** ya conocidos y los que faltan, y la documentación de la fuente.
-3. Lea la documentación de la fuente: explica cada argumento (una calle, un número, un identificador del sitio web del operador).
+Un administrador configura los calendarios una vez, para todo el hogar.
 
 ### Rellenar un calendario
 
-| Campo      | Qué escribir                                                                                                                        |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Nombre     | un nombre para el calendario, mostrado en el calendario, el widget y las escenas (por ejemplo «Casa»)                               |
-| Fuente     | el nombre de la fuente, por ejemplo `ics` u `opendata_bordeauxmetropole_fr`                                                         |
-| Argumentos | un objeto JSON, por ejemplo `{"city": "Bordeaux", "address": "20 Cours Pasteur"}`, o pares `clave=valor` separados por punto y coma |
+1. Abra **Integraciones → Waste Collection Schedule → Configuración**.
+2. En **Calendario 1**, rellene:
 
-Ejemplos:
+| Campo                 | Qué escribir                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------ |
+| Casa                  | la casa de Gladys: su nombre da nombre al calendario, al widget y a los textos de las escenas          |
+| País                  | el país de la dirección: la fuente se busca allí                                                       |
+| Municipio             | su municipio: la fuente se encuentra a partir de él (por ejemplo Bordeaux, Besançon, Nantes)           |
+| Código postal         | su código postal, si la fuente lo pide                                                                 |
+| Calle, Número         | su dirección, si la fuente la pide                                                                     |
+| Fuente (opcional)     | déjelo vacío; vea más abajo cuando el municipio no basta                                               |
+| Enlace ICS (opcional) | un enlace de calendario de su ayuntamiento, para un municipio sin fuente                               |
+| Parámetros avanzados  | rara vez necesario: pares `clave=valor` separados por punto y coma, para un parámetro sin campo propio |
 
-- un enlace ICS: fuente `ics`, argumentos `{"url": "https://example.org/recogidas.ics"}`;
-- Bordeaux Métropole: fuente `opendata_bordeauxmetropole_fr`, argumentos `{"city": "Bordeaux", "address": "20 Cours Pasteur"}`.
+3. Guarde y pulse **Probar los calendarios**: para cada calendario, cuántas fechas y qué tipos de residuos devolvió la fuente, o lo que falta («Grand Besançon Métropole también necesita: Calle»). Un código INSEE francés se obtiene automáticamente a partir del municipio.
 
-Hasta tres calendarios: una segunda residencia, o una segunda fuente para la misma dirección (el municipio para la mayoría de los contenedores y un enlace ICS para el vidrio). Guarde y pulse **Probar los calendarios**: la respuesta indica, para cada calendario, cuántas fechas y qué tipos de residuos devolvió la fuente, o qué falla.
+Hasta tres calendarios: una segunda residencia, o una segunda fuente para la misma casa (el municipio para la mayoría de los contenedores y un enlace ICS para el vidrio). Dos calendarios de la misma casa muestran su fuente entre paréntesis.
+
+### Cuando el municipio no basta
+
+Algunos municipios los atiende un operador con otro nombre (un pueblo de un área metropolitana), y algunos nombres coinciden con varias fuentes. **Probar los calendarios** lo indica entonces y lista las candidatas. Escriba su municipio u operador en **Buscar una fuente** al final de la página: la respuesta lista las fuentes que coinciden, lo que pide cada una (con los nombres de los campos de arriba) y su documentación. Copie el nombre de la suya en **Fuente**, por ejemplo `Grand Besançon Métropole` para un pueblo del Gran Besanzón.
 
 ### Tipos de residuos, avisos y actualizaciones
 
@@ -94,8 +97,10 @@ Cada disparador puede filtrarse por un calendario. Un aviso se envía una sola v
 
 ## Solución de problemas
 
-- **Fuente desconocida**: compruebe cómo se escribe la fuente (minúsculas, guiones bajos), tal como la da **Buscar una fuente**.
-- **Argumentos no válidos**: el mensaje de **Probar los calendarios** indica el argumento erróneo y, cuando la fuente los conoce, propone los valores correctos (nombres de calles, municipios).
+- **No se encontró ninguna fuente**: compruebe el país, o escriba el nombre de su operador de residuos en **Fuente**, tal como lo da **Buscar una fuente**.
+- **Varias fuentes coinciden**: copie la correcta, de la lista del mensaje, en **Fuente**.
+- **Falta un valor**: el mensaje de **Probar los calendarios** indica el campo que hay que rellenar; un parámetro sin campo va en **Parámetros avanzados** como `clave=valor`. Cuando la fuente los conoce, el mensaje propone los valores correctos (nombres de calles, municipios).
+- **Código INSEE**: municipio no encontrado, o varios municipios con el mismo nombre: añada el código postal.
 - **La fuente falló** o **tardó demasiado**: el sitio web de la fuente falla o ha cambiado, o ya no encuentra su dirección. La integración vuelve a intentarlo a los 15 minutos, después cada vez con menos frecuencia, y mientras tanto conserva las últimas fechas conocidas. Si persiste, compruebe si la fuente funciona en Home Assistant: si no, avise a [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues); la corrección llegará con una actualización de la integración.
 - **Fechas erróneas o que faltan**: las fechas son las de la fuente. Compárelas con el sitio web de su operador e informe de la diferencia al proyecto de origen.
 - **No aparece ningún calendario tras activarla**: los calendarios se envían tras la primera actualización correcta de las fuentes; compruebe que **Sincronizar este calendario** está activado.

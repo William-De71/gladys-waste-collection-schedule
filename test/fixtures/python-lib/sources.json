@@ -1,7 +1,13 @@
 {
   "Neverland": [
-    { "title": "Springfield", "module": "fake_town", "default_params": { "city": "Springfield" }, "id": "fake_town" },
-    { "title": "Shelbyville", "module": "fake_town", "default_params": { "city": "Shelbyville" }, "id": "fake_town" },
-    { "title": "Springfield Recycling Center", "module": "fake_town", "default_params": {}, "id": "fake_town" }
+    {"title": "Springfield", "module": "fake_town", "default_params": {"city": "Springfield"}, "id": "fake_town"},
+    {"title": "Shelbyville", "module": "fake_town", "default_params": {"city": "Shelbyville"}, "id": "fake_town"},
+    {"title": "Springfield Recycling Center", "module": "fake_town", "default_params": {}, "id": "fake_town"},
+    {"title": "Fakeville", "module": "fake_town", "default_params": {"city": "Springfield"}, "id": "fake_town"}
+  ],
+  "France": [
+    {"title": "Fake Métropole", "module": "fake_metropole_fr", "default_params": {}, "id": "fake_metropole_fr"},
+    {"title": "Fakeville", "module": "fake_metropole_fr", "default_params": {"zone": "north"}, "id": "fake_metropole_fr"},
+    {"title": "Fakeville Sud", "module": "fake_metropole_fr", "default_params": {"zone": "south"}, "id": "fake_metropole_fr"}
   ]
 }

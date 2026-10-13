@@ -45,7 +45,7 @@ flowchart LR
   P -- HTTPS --> Sources
 ```
 
-Un minuteur d’une minute interroge les calendriers dont c’est l’heure (un court processus Python chacun, un à la fois), publie les calendriers de chaque utilisateur qui a activé l’intégration, rafraîchit le widget à minuit et déclenche les rappels.
+Un minuteur d’une minute interroge les calendriers dont c’est l’heure (un court processus Python chacun, un à la fois), publie les calendriers de chaque utilisateur qui a activé l’intégration, rafraîchit le widget à minuit et déclenche les rappels. Pour chaque calendrier, `python/bridge.py` trouve d’abord la source : un nom de module tel quel, sinon les entrées de la bibliothèque dans le pays choisi, le titre exact d’abord, puis les titres qui commencent par le texte, puis ceux qui contiennent tous ses mots (recherche avec Source, sinon avec Commune) ; une égalité entre sources différentes est une erreur « ambiguous » qui les liste, jamais un choix au hasard. Il donne ensuite les champs d’adresse aux paramètres de la source qui veulent dire la même chose (`FIELD_PARAMS`, noms exacts), les paramètres avancés en dernier. Une source française qui demande un code INSEE l’obtient de geo.api.gouv.fr avec la commune et le code postal.
 
 ```mermaid
 sequenceDiagram
@@ -54,7 +54,7 @@ sequenceDiagram
   participant I as Intégration
   participant P as bridge.py
   participant S as Source
-  U->>G: configure source + arguments
+  U->>G: choisit maison + pays, remplit l’adresse
   G->>I: config-updated
   I->>P: {"command": "fetch", ...}
   P->>S: requête HTTPS
@@ -74,7 +74,7 @@ Un calendrier par source (« Collecte des déchets – Maison », dans la langue
 
 ## Transport
 
-**Cloud uniquement** (`"transports": ["cloud"]`) : chaque source est un site web ou une API sur Internet, interrogé depuis votre Gladys toutes les 12 heures par défaut. Le catalogue affiche le badge cloud ; il n’y a pas de bouton « Préférer la connexion locale » (canal unique). Votre adresse, ou ce dont votre source a besoin (une rue, un numéro, un lien de calendrier), est envoyée à cette source et à personne d’autre ; rien ne passe par un serveur de Gladys.
+**Cloud uniquement** (`"transports": ["cloud"]`) : chaque source est un site web ou une API sur Internet, interrogé depuis votre Gladys toutes les 12 heures par défaut. Le catalogue affiche le badge cloud ; il n’y a pas de bouton « Préférer la connexion locale » (canal unique). Votre adresse, ou ce dont votre source a besoin (une rue, un numéro, un lien de calendrier), est envoyée à cette source et à personne d’autre ; rien ne passe par un serveur de Gladys. Pour les rares sources françaises qui demandent un code INSEE, la commune et le code postal (jamais la rue) sont envoyés à geo.api.gouv.fr, l’API géographique publique de l’État. La permission `location` permet à l’intégration de lire les maisons de Gladys (`GET /house`) pour leur nom seulement : les coordonnées arrivent avec, mais ne sont pas utilisées.
 
 ## Widget
 
@@ -118,19 +118,27 @@ Un rappel est envoyé une fois par collecte, même après un redémarrage, jusqu
 
 ## Configuration
 
-| Champ                   | Type   | Défaut  | Signification                                                                                               |
-| ----------------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `name_1` … `name_3`     | string |         | nom du calendrier (calendrier, widget, scènes)                                                              |
-| `source_1` … `source_3` | string |         | source Waste Collection Schedule, par ex. `ics`, `opendata_bordeauxmetropole_fr` (calendrier 1 obligatoire) |
-| `args_1` … `args_3`     | string |         | arguments : objet JSON ou `clé=valeur; clé=valeur`                                                          |
-| `rename`                | string |         | `Original=Nouveau; …`                                                                                       |
-| `hide`                  | string |         | `Type; Type`                                                                                                |
-| `reminder_time`         | select | `19:00` | rappel du soir, de 16 h à 22 h ou `off`                                                                     |
-| `morning_time`          | select | `06:00` | rappel du matin, de 5 h à 10 h ou `off`                                                                     |
-| `refresh_hours`         | select | `12`    | mise à jour toutes les 6, 12 ou 24 heures                                                                   |
-| `language`              | select | `en`    | langue des textes envoyés aux scènes (noms par défaut, erreurs)                                             |
+| Champ                       | Type   | Défaut  | Signification                                                                                                                                         |
+| --------------------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `house_1` … `house_3`       | select |         | maison de Gladys (`source: "houses"`) : donne son nom au calendrier et au widget ; deux calendriers d’une même maison ont la source entre parenthèses |
+| `country_1` … `country_3`   | select |         | pays de la bibliothèque, où la source est cherchée                                                                                                    |
+| `city_1` … `city_3`         | string |         | Commune : trouve la source quand Source est vide, et remplit son paramètre de commune                                                                 |
+| `postcode_1` … `postcode_3` | string |         | Code postal                                                                                                                                           |
+| `street_1` … `street_3`     | string |         | Rue                                                                                                                                                   |
+| `number_1` … `number_3`     | string |         | Numéro                                                                                                                                                |
+| `source_1` … `source_3`     | string |         | Source (facultatif) : titre d’une source ou nom de module, par ex. `Grand Besançon Métropole` ; vide, trouvée à partir de la commune                  |
+| `url_1` … `url_3`           | string |         | Lien ICS (facultatif) : seul, la source `ics`                                                                                                         |
+| `args_1` … `args_3`         | string |         | Paramètres avancés : `clé=valeur; clé=valeur` (JSON encore lu) ; ils l’emportent sur les champs ci-dessus                                             |
+| `rename`                    | string |         | `Original=Nouveau; …`                                                                                                                                 |
+| `hide`                      | string |         | `Type; Type`                                                                                                                                          |
+| `reminder_time`             | select | `19:00` | rappel du soir, de 16 h à 22 h ou `off`                                                                                                               |
+| `morning_time`              | select | `06:00` | rappel du matin, de 5 h à 10 h ou `off`                                                                                                               |
+| `refresh_hours`             | select | `12`    | mise à jour toutes les 6, 12 ou 24 heures                                                                                                             |
+| `language`                  | select | `en`    | langue des textes envoyés aux scènes (noms par défaut, erreurs)                                                                                       |
 
-Boutons de la page de configuration : **Trouver une source** (recherche par commune, organisme ou pays : source, arguments connus, arguments à compléter, lien de documentation) et **Tester les calendriers** (interroge chaque source maintenant et montre ce qu’elle a renvoyé, ou l’erreur avec les suggestions de la source).
+`name_1` … `name_3` ont quitté le formulaire au profit de la maison ; une ancienne configuration nomme encore ses calendriers avec.
+
+Boutons de la page de configuration : **Trouver une source** (recherche par commune, organisme ou pays : ce que demande chaque source, avec les libellés du formulaire, et son nom pour Source quand la commune ne suffit pas) et **Tester les calendriers** (interroge chaque source maintenant et montre ce qu’elle a renvoyé, ou ce qui ne va pas : une valeur manquante, plusieurs sources possibles, les suggestions de la source).
 
 ## Utilisation
 
@@ -152,15 +160,16 @@ WCS_PYTHON=.wcs/venv/bin/python WCS_LIB_DIR=.wcs/lib WCS_DATA_DIR=.wcs/data \
   DEBUG=gladys-integration-sdk node index.js
 ```
 
-| Variable       | Défaut             | Rôle                                          |
-| -------------- | ------------------ | --------------------------------------------- |
-| `WCS_PYTHON`   | `python3`          | interpréteur Python avec les dépendances      |
-| `WCS_LIB_DIR`  | `/app/python/lib`  | dossier du paquet `waste_collection_schedule` |
-| `WCS_BRIDGE`   | `python/bridge.py` | le script passerelle                          |
-| `WCS_DATA_DIR` | `/data`            | fichier d’état et fichiers temporaires        |
-| `WCS_DEBUG`    | non définie        | journaux de débogage des sources (stderr)     |
+| Variable       | Défaut                    | Rôle                                                                  |
+| -------------- | ------------------------- | --------------------------------------------------------------------- |
+| `WCS_PYTHON`   | `python3`                 | interpréteur Python avec les dépendances                              |
+| `WCS_LIB_DIR`  | `/app/python/lib`         | dossier du paquet `waste_collection_schedule`                         |
+| `WCS_BRIDGE`   | `python/bridge.py`        | le script passerelle                                                  |
+| `WCS_DATA_DIR` | `/data`                   | fichier d’état et fichiers temporaires                                |
+| `WCS_DEBUG`    | non définie               | journaux de débogage des sources (stderr)                             |
+| `WCS_GEO_API`  | `https://geo.api.gouv.fr` | recherche du code INSEE (les tests la dirigent vers un serveur local) |
 
-Essayer une source directement : `echo '{"command": "fetch", "source": "ics", "args": {"url": "…"}}' | WCS_LIB_DIR=.wcs/lib .wcs/venv/bin/python -I python/bridge.py`.
+Essayer une adresse directement : `echo '{"command": "fetch", "country": "France", "address": {"city": "Bordeaux", "street": "Cours Pasteur", "number": "20"}}' | WCS_LIB_DIR=.wcs/lib .wcs/venv/bin/python -I python/bridge.py`.
 
 | Script                            | Rôle                                         |
 | --------------------------------- | -------------------------------------------- |
@@ -200,7 +209,11 @@ flowchart LR
 
 ## Dépannage
 
-- **Tester les calendriers** explique la plupart des problèmes : source inconnue, argument invalide (avec les suggestions de la source), source en panne.
+- **Tester les calendriers** explique la plupart des problèmes, calendrier par calendrier.
+- **Aucune source trouvée** : vérifiez le pays, ou écrivez le nom de votre organisme de collecte (donné par **Trouver une source**) dans Source (facultatif).
+- **Plusieurs sources correspondent** : recopiez la bonne, telle que listée, dans Source (facultatif).
+- **Une valeur manque** : le message nomme le champ à remplir ; un paramètre sans champ va dans Paramètres avancés en `clé=valeur`.
+- **Code INSEE** : commune introuvable ou plusieurs communes de ce nom : ajoutez le Code postal.
 - Une source cassée ici l’est en général aussi dans Home Assistant : vérifiez, puis signalez-la à [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues).
 - Un calendrier est vide : vérifiez **Synchroniser ce calendrier** dans **Mes calendriers**.
 - Journaux : l’onglet Journaux de l’intégration ; `DEBUG=gladys-integration-sdk` pour le détail du SDK.

@@ -9,6 +9,7 @@ import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 
 import { ACTIONS, createApp, SCENE_ACTIONS } from '../src/app.js';
 import {
+  ADDRESS_FIELDS,
   DEFAULT_MORNING,
   DEFAULT_REFRESH_HOURS,
   DEFAULT_REMINDER,
@@ -57,18 +58,29 @@ test('store rules: type, Gladys version, transports, categories, descriptions', 
     assert.ok(length >= 10 && length <= 100, `${language}: ${length}`);
   }
   assert.ok(manifest.name.length >= 3 && manifest.name.length <= 30);
+  // The names of the houses name the schedules (GET /house).
+  assert.equal(manifest.location, true);
   // No permission the code does not use.
-  for (const key of ['location', 'network_wake', 'network_discovery', 'containers', 'webhooks']) {
+  for (const key of ['network_wake', 'network_discovery', 'containers', 'webhooks']) {
     assert.equal(manifest[key], undefined, key);
   }
+  // The store indexer refuses a manifest over 100 KB.
+  assert.ok(Buffer.byteLength(read('gladys-assistant-integration.json')) < 90 * 1024);
 });
 
 test('configuration keys of the code are declared, with the same choices', () => {
   const fields = Object.fromEntries(manifest.config_schema.map((field) => [field.key, field]));
   for (const slot of SLOTS) {
-    for (const key of [`name_${slot}`, `source_${slot}`, `args_${slot}`]) {
+    const keys = ['source', 'args', ...ADDRESS_FIELDS].map((name) => `${name}_${slot}`);
+    for (const key of keys) {
       assert.equal(fields[key]?.type, 'string', key);
+      assert.equal(fields[key].required, undefined, `${key}: the town alone is often enough`);
     }
+    assert.equal(fields[`house_${slot}`].source, 'houses');
+    // Same countries as the library (python/check_sources.py checks it upstream).
+    assert.ok(fields[`country_${slot}`].options.some((option) => option.value === 'France'));
+    // name_<n> left the form for the house; still read for older configurations.
+    assert.equal(fields[`name_${slot}`], undefined);
   }
   assert.equal(fields.rename.type, 'string');
   assert.equal(fields.hide.type, 'string');

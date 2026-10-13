@@ -12,38 +12,41 @@ Les dates viennent de [Waste Collection Schedule](https://github.com/mampfes/hac
 
 ![Le widget « Prochaines collectes », avec un calendrier puis deux (illustration générée, pas une capture d’écran)](https://raw.githubusercontent.com/William-De71/gladys-waste-collection-schedule/main/docs/assets/widgets.fr.png)
 
-**Transport : cloud.** Le conteneur interroge le site web ou l’API de votre source, depuis votre Gladys, toutes les 12 heures par défaut. Votre adresse (ou ce dont la source a besoin : une rue, un numéro, un lien de calendrier) est envoyée à cette source et à personne d’autre. Rien ne passe par un serveur de Gladys.
+**Transport : cloud.** Le conteneur interroge le site web ou l’API de votre source, depuis votre Gladys, toutes les 12 heures par défaut. Votre adresse (ou ce dont la source a besoin : une rue, un numéro, un lien de calendrier) est envoyée à cette source et à personne d’autre. Pour les quelques sources françaises qui demandent un code INSEE, la commune et son code postal (jamais la rue) sont aussi envoyés à [geo.api.gouv.fr](https://geo.api.gouv.fr), l’API publique de l’État, pour le trouver. Rien ne passe par un serveur de Gladys. L’intégration demande à lire les maisons de Gladys (permission de localisation) uniquement pour leur nom.
 
 ## Prérequis
 
 - Gladys Assistant 5.2.0 ou plus récent (intégrations de calendriers).
 - Votre Gladys accède à Internet.
-- Une source pour votre adresse. Consultez la [liste des sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), ou utilisez le bouton **Trouver une source** de la page de configuration. Pas de source pour votre commune ? La source **ics** lit n’importe quel lien de calendrier (`.ics`, `webcal://`) publié par votre mairie ou votre organisme de collecte.
+- Une source pour votre adresse : la plupart des communes sont trouvées à partir de leur seul nom. Consultez la [liste des sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), ou utilisez le bouton **Trouver une source** de la page de configuration. Pas de source pour votre commune ? Collez le lien de calendrier (`.ics`, `webcal://`) publié par votre mairie ou votre organisme de collecte dans **Lien ICS**.
 
 ## Configuration
 
-Un administrateur configure les sources une fois, pour tout le foyer.
-
-### Trouver votre source et ses arguments
-
-1. Ouvrez **Intégrations → Waste Collection Schedule → Configuration**.
-2. En bas de la page, saisissez le nom de votre commune ou de votre organisme de collecte dans **Trouver une source**, puis lancez-le. La réponse liste les sources qui correspondent, avec la **source** à recopier, les **arguments** déjà connus et ceux à compléter, et la documentation de la source.
-3. Lisez la documentation de la source : elle explique chaque argument (une rue, un numéro, un identifiant trouvé sur le site de l’organisme).
+Un administrateur configure les calendriers une fois, pour tout le foyer.
 
 ### Remplir un calendrier
 
-| Champ     | Quoi écrire                                                                                                                                   |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nom       | un nom pour le calendrier, affiché dans le calendrier, le widget et les scènes (par exemple « Maison »)                                       |
-| Source    | le nom de la source, par exemple `ics` ou `opendata_bordeauxmetropole_fr`                                                                     |
-| Arguments | un objet JSON, par exemple `{"city": "Bordeaux", "address": "20 Cours Pasteur"}`, ou des paires `clé=valeur` séparées par des points-virgules |
+1. Ouvrez **Intégrations → Waste Collection Schedule → Configuration**.
+2. Dans **Calendrier 1**, remplissez :
 
-Exemples :
+| Champ                 | Quoi écrire                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Maison                | la maison de Gladys : son nom nomme le calendrier, le widget et les textes des scènes                         |
+| Pays                  | le pays de l’adresse : la source y est cherchée                                                               |
+| Commune               | votre commune : la source est trouvée à partir d’elle (par exemple Bordeaux, Besançon, Nantes)                |
+| Code postal           | votre code postal, si la source le demande                                                                    |
+| Rue, Numéro           | votre adresse, si la source la demande                                                                        |
+| Source (facultatif)   | laissez vide ; voir plus bas quand la commune ne suffit pas                                                   |
+| Lien ICS (facultatif) | un lien de calendrier de votre mairie, pour une commune sans source                                           |
+| Paramètres avancés    | rarement utile : des paires `clé=valeur` séparées par des points-virgules, pour un paramètre sans champ dédié |
 
-- un lien ICS : source `ics`, arguments `{"url": "https://example.org/collectes.ics"}` ;
-- Bordeaux Métropole : source `opendata_bordeauxmetropole_fr`, arguments `{"city": "Bordeaux", "address": "20 Cours Pasteur"}`.
+3. Enregistrez, puis appuyez sur **Tester les calendriers** : pour chaque calendrier, combien de dates et quels types de déchets la source a renvoyés, ou ce qui manque (« Grand Besançon Métropole a aussi besoin de : Rue »). Le code INSEE est trouvé automatiquement à partir de la commune.
 
-Jusqu’à trois calendriers : une résidence secondaire, ou une deuxième source pour la même adresse (la commune pour la plupart des bacs et un lien ICS pour le verre). Enregistrez, puis appuyez sur **Tester les calendriers** : la réponse indique, pour chaque calendrier, combien de dates et quels types de déchets la source a renvoyés, ou ce qui ne va pas.
+Jusqu’à trois calendriers : une résidence secondaire, ou une deuxième source pour la même maison (la commune pour la plupart des bacs et un lien ICS pour le verre). Deux calendriers de la même maison affichent leur source entre parenthèses.
+
+### Quand la commune ne suffit pas
+
+Certaines communes sont desservies par un organisme dont le nom diffère de la commune (un village d’une métropole), et certains noms correspondent à plusieurs sources. **Tester les calendriers** le dit alors et liste les candidates. Saisissez votre commune ou votre organisme dans **Trouver une source** en bas de la page : la réponse liste les sources qui correspondent, ce que chacune demande (avec les noms des champs ci-dessus) et sa documentation. Recopiez le nom de la vôtre dans **Source**, par exemple `Grand Besançon Métropole` pour un village du Grand Besançon.
 
 ### Types de déchets, rappels et mises à jour
 
@@ -94,8 +97,10 @@ Chaque déclencheur peut être filtré sur un calendrier. Un rappel n’est envo
 
 ## Dépannage
 
-- **Source inconnue** : vérifiez l’orthographe de la source (minuscules, tirets bas), telle que la donne **Trouver une source**.
-- **Arguments invalides** : le message de **Tester les calendriers** nomme l’argument en cause et, quand la source les connaît, propose les bonnes valeurs (noms de rues, communes).
+- **Aucune source trouvée** : vérifiez le pays, ou écrivez le nom de votre organisme de collecte dans **Source**, tel que le donne **Trouver une source**.
+- **Plusieurs sources correspondent** : recopiez la bonne, parmi la liste du message, dans **Source**.
+- **Il manque une valeur** : le message de **Tester les calendriers** nomme le champ à remplir ; un paramètre sans champ va dans **Paramètres avancés** sous la forme `clé=valeur`. Quand la source les connaît, le message propose les bonnes valeurs (noms de rues, communes).
+- **Code INSEE** : commune introuvable, ou plusieurs communes du même nom : ajoutez le code postal.
 - **La source a échoué** ou **a mis trop de temps** : le site de la source est en panne ou a changé, ou il ne trouve plus votre adresse. L’intégration réessaie après 15 minutes, puis de moins en moins souvent, et garde entre-temps les dernières dates connues. Si cela dure, vérifiez si la source fonctionne dans Home Assistant : sinon, signalez-le à [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues), la correction arrivera avec une mise à jour de l’intégration.
 - **Dates fausses ou manquantes** : les dates sont celles de la source. Comparez avec le site de votre organisme de collecte, et signalez un écart en amont.
 - **Pas de calendrier après l’activation** : les calendriers sont envoyés après la première mise à jour réussie des sources ; vérifiez que **Synchroniser ce calendrier** est activé.
