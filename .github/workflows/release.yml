@@ -232,7 +232,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           topics="$(gh api "repos/${GITHUB_REPOSITORY}/topics" --jq '.names[]' || true)"
+          # A warning, not a failure: the topic may be left out on purpose
+          # (an integration tested before it is listed in the store).
           if ! grep -qx 'gladys-assistant-integration' <<<"$topics"; then
-            echo "::error::Add the 'gladys-assistant-integration' topic to the repository (About -> Topics): the store only indexes tagged repositories, and GITHUB_TOKEN cannot set it."
-            exit 1
+            echo "::warning::No 'gladys-assistant-integration' topic: the store does not index this repository. Add it (About -> Topics) to list the integration; GITHUB_TOKEN cannot set it."
+            echo "Not listed in the store: no 'gladys-assistant-integration' topic." >> "$GITHUB_STEP_SUMMARY"
           fi
