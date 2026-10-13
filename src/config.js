@@ -4,7 +4,7 @@
 // Three schedule slots (`name_<n>`, `source_<n>`, `args_<n>`): a slot is a
 // Waste Collection Schedule source and its arguments, exactly what Home
 // Assistant users write under `sources:` in YAML. A slot number is the
-// identity of its device, its calendar and its widget filter: changing the
+// identity of its calendar and of its widget filter: changing the
 // arguments of a slot (a typo, a move) keeps them.
 // -----------------------------------------------------------------------------
 

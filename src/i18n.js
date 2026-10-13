@@ -3,7 +3,7 @@
 //
 // `t(key, vars)` returns a multi-language object `{ en, fr, de, es }` (widgets,
 // action results, connection status); `text(key, language, vars)` returns one
-// string (device names, calendar names: Gladys does not send the language of
+// string (calendar names, scene texts: Gladys does not send the language of
 // the user with a scan or a calendar sync, see `language` in config.js).
 // -----------------------------------------------------------------------------
 
@@ -16,12 +16,6 @@ const MESSAGES = {
     de: 'Abfuhrplan {slot}',
     es: 'Calendario {slot}',
   },
-  deviceName: {
-    en: 'Waste collection {name}',
-    fr: 'Collecte des déchets {name}',
-    de: 'Müllabfuhr {name}',
-    es: 'Recogida de residuos {name}',
-  },
   calendarName: {
     en: 'Waste collection – {name}',
     fr: 'Collecte des déchets – {name}',
@@ -33,24 +27,6 @@ const MESSAGES = {
     fr: 'Dates de collecte de {source}, tenues à jour par l’intégration Waste Collection Schedule.',
     de: 'Abfuhrtermine von {source}, aktuell gehalten von der Integration Waste Collection Schedule.',
     es: 'Fechas de recogida de {source}, actualizadas por la integración Waste Collection Schedule.',
-  },
-  featureNextDays: {
-    en: 'Next collection (days)',
-    fr: 'Prochaine collecte (jours)',
-    de: 'Nächste Abholung (Tage)',
-    es: 'Próxima recogida (días)',
-  },
-  featureNextTypes: {
-    en: 'Next collection',
-    fr: 'Prochaine collecte',
-    de: 'Nächste Abholung',
-    es: 'Próxima recogida',
-  },
-  featureTypeDays: {
-    en: '{type} (days)',
-    fr: '{type} (jours)',
-    de: '{type} (Tage)',
-    es: '{type} (días)',
   },
   nothingPlanned: {
     en: 'Nothing planned',

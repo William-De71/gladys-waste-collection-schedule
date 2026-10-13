@@ -5,18 +5,17 @@
 [![Licence : Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
 [![Dernière version](https://img.shields.io/github/v/release/William-De71/gladys-waste-collection-schedule?sort=semver)](https://github.com/William-De71/gladys-waste-collection-schedule/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/William-De71/gladys-waste-collection-schedule/release.yml?branch=main&label=CI)](https://github.com/William-De71/gladys-waste-collection-schedule/actions/workflows/release.yml)
-[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.1.1-2f6fb5)](https://gladysassistant.com)
+[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.2.0-2f6fb5)](https://gladysassistant.com)
 
 ![Waste Collection Schedule pour Gladys Assistant](cover.jpg)
 
-Les dates de collecte des déchets de votre adresse dans Gladys Assistant, grâce aux près de 1 000 sources de [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule) (communes, organismes de collecte, applications et liens de calendrier ICS d’une trentaine de pays). Des appareils, un rappel la veille au soir, un widget de tableau de bord et, dans sa variante calendrier, les collectes dans le calendrier de Gladys.
+Les dates de collecte des déchets de votre adresse dans Gladys Assistant, grâce aux près de 1 000 sources de [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule) (communes, organismes de collecte, applications et liens de calendrier ICS d’une trentaine de pays) : dans le calendrier de Gladys, en rappel la veille au soir et dans un widget de tableau de bord.
 
 ## Fonctionnalités
 
 - **Près de 1 000 sources** : la bibliothèque Waste Collection Schedule elle-même (MIT), embarquée et épinglée dans l’image, mise à jour par un workflow hebdomadaire. N’importe quel lien de calendrier ICS fonctionne aussi.
 - **Jusqu’à trois calendriers de collecte** (une résidence secondaire, ou une deuxième source pour la même adresse).
-- **Appareils** : jours avant la prochaine collecte, ses types de déchets, et jours avant la prochaine collecte de chaque type.
-- **Variante calendrier** ([Waste Collection Calendar](https://github.com/William-De71/gladys-waste-collection-calendar), même image) : un calendrier par source pour chaque utilisateur qui l’active.
+- **Calendrier** : un calendrier par source pour chaque utilisateur qui active l’intégration dans **Mes calendriers**, avec un événement sur la journée par collecte et par type de déchet.
 - **Widget de tableau de bord** « Prochaines collectes », avec un bac de la bonne couleur pour chaque jour de collecte.
 - **Déclencheurs de scène** : collecte demain (rappel du soir), type de déchet collecté demain, collecte aujourd’hui (rappel du matin), échec de mise à jour.
 - **Actions de scène** : lire la prochaine collecte (éventuellement d’un type de déchet), mettre à jour les dates de collecte.
@@ -30,7 +29,6 @@ Les dates de collecte des déchets de votre adresse dans Gladys Assistant, grâc
 ```mermaid
 flowchart LR
   subgraph Gladys["Gladys Assistant"]
-    D[Découverte / appareils]
     C[Calendrier]
     S[Scènes]
     W[Widget]
@@ -47,7 +45,7 @@ flowchart LR
   P -- HTTPS --> Sources
 ```
 
-Une même image tourne comme deux intégrations du store. À chaque connexion, le conteneur demande à Gladys ses comptes calendrier : une intégration calendrier les obtient, une intégration appareils reçoit un 403, et le conteneur choisit son mode. Un minuteur d’une minute interroge les calendriers dont c’est l’heure (un court processus Python chacun, un à la fois), publie les nouvelles valeurs à minuit et déclenche les rappels.
+Un minuteur d’une minute interroge les calendriers dont c’est l’heure (un court processus Python chacun, un à la fois), publie les calendriers de chaque utilisateur qui a activé l’intégration, rafraîchit le widget à minuit et déclenche les rappels.
 
 ```mermaid
 sequenceDiagram
@@ -62,24 +60,17 @@ sequenceDiagram
   P->>S: requête HTTPS
   S-->>P: dates de collecte
   P-->>I: {"ok": true, "collections": [...]}
-  I->>G: publishDiscoveredDevices (un appareil par calendrier)
-  U->>G: ajoute l’appareil (onglet Découverte)
-  G->>I: appareil créé
-  I->>G: publishChangedStates (jours avant chaque collecte)
+  U->>G: active l’intégration (Mes calendriers)
+  I->>G: publishCalendars + publishCalendarEvents
+  G->>U: les collectes dans la vue calendrier
   Note over I,G: chaque soir à l’heure du rappel
   I->>G: publishSceneEvent("collection_tomorrow", ...)
   G->>U: la scène envoie « Demain : tri sélectif »
 ```
 
-## Appareils et fonctionnalités
+## Calendrier
 
-| Fonctionnalité                                | Catégorie / type     | Unité | Plage    | Valeur                                                                        |
-| --------------------------------------------- | -------------------- | ----- | -------- | ----------------------------------------------------------------------------- |
-| Prochaine collecte (jours)                    | `duration / integer` | jours | -1 – 400 | jours avant la prochaine collecte : 0 aujourd’hui, 1 demain, -1 rien de prévu |
-| Prochaine collecte                            | `text / text`        |       |          | les types de déchets de cette collecte                                        |
-| _&lt;type de déchet&gt;_ (jours), un par type | `duration / integer` | jours | -1 – 400 | jours avant la prochaine collecte de ce type                                  |
-
-Un appareil par calendrier, identifiant externe `ext:<selector>:schedule:<1|2|3>`. Gladys ne l’interroge pas (`should_poll: false`) : l’intégration publie les valeurs après chaque interrogation et à minuit. Les noms des types de déchets sont ceux de la source ; un type hors saison garde sa fonctionnalité (valeur -1).
+Un calendrier par source (« Collecte des déchets – Maison », dans la langue de chaque utilisateur) pour chaque utilisateur qui a activé l’intégration dans **Mes calendriers**, identifiant externe `ext:<selector>:<user>:schedule-<1|2|3>`. Un événement sur la journée par collecte et par type de déchet, nommé d’après le type, de 35 jours en arrière à 400 jours devant. La fenêtre est republiée quand la source change et une fois par jour : une collecte que la source déplace ou supprime est déplacée ou disparaît aussi dans Gladys. Un calendrier commence privé : **Partager avec le foyer** le rend visible au foyer et aux déclencheurs calendrier des scènes. Le widget et les déclencheurs de l’intégration n’en dépendent pas.
 
 ## Transport
 
@@ -113,13 +104,9 @@ Exemples :
 
 Un rappel est envoyé une fois par collecte, même après un redémarrage, jusqu’à 3 heures en retard si Gladys était éteint. `fetch_failed` n’est jamais déclenché après une mise à jour demandée par une scène (pas de boucle).
 
-## Variante calendrier
-
-[Waste Collection Calendar](https://github.com/William-De71/gladys-waste-collection-calendar) est la même image avec un manifeste `type: "calendar"` (Gladys 5.2.0 ou plus récent). Chaque utilisateur qui l’active dans **Mes calendriers** reçoit un calendrier par calendrier de collecte : un événement sur la journée par collecte et par type de déchet, de 35 jours en arrière à 400 jours devant, republié quand la source change. Le widget, les déclencheurs et les actions sont les mêmes. Son dépôt ne contient que le manifeste, les docs et un workflow qui suit les versions de celui-ci.
-
 ## Prérequis
 
-- Gladys Assistant **5.1.1 ou plus récent** (les widgets et les déclencheurs de scène demandent la 5.1 ; les instances plus anciennes ne peuvent pas installer l’intégration). 5.2.0 ou plus récent pour la variante calendrier.
+- Gladys Assistant **5.2.0 ou plus récent** (intégrations de calendriers ; les instances plus anciennes ne peuvent pas installer l’intégration).
 - Un accès à Internet depuis Gladys.
 - Une source pour votre adresse : voir la [liste des sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), ou la source **ics** avec un lien de calendrier.
 
@@ -133,7 +120,7 @@ Un rappel est envoyé une fois par collecte, même après un redémarrage, jusqu
 
 | Champ                   | Type   | Défaut  | Signification                                                                                               |
 | ----------------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `name_1` … `name_3`     | string |         | nom du calendrier (appareil, widget, scènes)                                                                |
+| `name_1` … `name_3`     | string |         | nom du calendrier (calendrier, widget, scènes)                                                              |
 | `source_1` … `source_3` | string |         | source Waste Collection Schedule, par ex. `ics`, `opendata_bordeauxmetropole_fr` (calendrier 1 obligatoire) |
 | `args_1` … `args_3`     | string |         | arguments : objet JSON ou `clé=valeur; clé=valeur`                                                          |
 | `rename`                | string |         | `Original=Nouveau; …`                                                                                       |
@@ -141,14 +128,14 @@ Un rappel est envoyé une fois par collecte, même après un redémarrage, jusqu
 | `reminder_time`         | select | `19:00` | rappel du soir, de 16 h à 22 h ou `off`                                                                     |
 | `morning_time`          | select | `06:00` | rappel du matin, de 5 h à 10 h ou `off`                                                                     |
 | `refresh_hours`         | select | `12`    | mise à jour toutes les 6, 12 ou 24 heures                                                                   |
-| `language`              | select | `en`    | langue des noms d’appareils et de fonctionnalités                                                           |
+| `language`              | select | `en`    | langue des textes envoyés aux scènes (noms par défaut, erreurs)                                             |
 
 Boutons de la page de configuration : **Trouver une source** (recherche par commune, organisme ou pays : source, arguments connus, arguments à compléter, lien de documentation) et **Tester les calendriers** (interroge chaque source maintenant et montre ce qu’elle a renvoyé, ou l’erreur avec les suggestions de la source).
 
 ## Utilisation
 
 1. Trouvez votre source avec **Trouver une source**, remplissez le calendrier 1, enregistrez, appuyez sur **Tester les calendriers**.
-2. Onglet Découverte → ajoutez l’appareil « Collecte des déchets _&lt;nom&gt;_ ».
+2. Chaque utilisateur appuie sur **Activer pour moi** dans **Mes calendriers**.
 3. Ajoutez le widget **Prochaines collectes** à un tableau de bord.
 4. Créez une scène sur **Collecte des déchets demain** pour être prévenu.
 
@@ -185,7 +172,7 @@ Essayer une source directement : `echo '{"command": "fetch", "source": "ics", "a
 
 ## Tests
 
-`npm test` fait tourner toute l’intégration contre le faux Gladys du SDK (appareils, états, rappels autour de minuit et des changements d’heure, contenu du widget validé par `validateWidgetContent`, calendriers), le vrai `python/bridge.py` contre une bibliothèque factice, le manifeste face au code, les traductions et le script de release. La CI construit aussi l’image et la démarre comme Gladys (lecture seule, 256 Mo, sans réseau) : le moteur répond et toutes les sources embarquées s’importent.
+`npm test` fait tourner toute l’intégration contre le faux Gladys du SDK (calendriers, rappels autour de minuit et des changements d’heure, contenu du widget validé par `validateWidgetContent`, calendriers), le vrai `python/bridge.py` contre une bibliothèque factice, le manifeste face au code, les traductions et le script de release. La CI construit aussi l’image et la démarre comme Gladys (lecture seule, 256 Mo, sans réseau) : le moteur répond et toutes les sources embarquées s’importent.
 
 ## Processus de release
 
@@ -209,14 +196,13 @@ flowchart LR
 - La 1.0.0 est une décision manuelle : Actions → Release → Run workflow, `release-as: 1.0.0`. `dry-run` affiche la version et le changelog sans rien publier.
 - **`main` protégée** : la release pousse un commit sur `main`. Avec une protection de branche ou un ruleset, autorisez GitHub Actions à la contourner (ou utilisez une GitHub App), sinon la release s’arrête après l’image.
 - **Mises à jour de Waste Collection Schedule** : `wcs-update.yml` ouvre une pull request à chaque version amont (activez Settings → Actions → General → « Allow GitHub Actions to create and approve pull requests »). Une pull request ouverte par GitHub Actions ne lance aucun workflow : fermez-la puis rouvrez-la pour lancer la CI.
-- **Variante calendrier** : le [dépôt calendrier](https://github.com/William-De71/gladys-waste-collection-calendar) vérifie toutes les 6 heures s’il y a une nouvelle version ici et la suit dès que l’image est publique.
 - Après la première release, rendez le package public : Package settings → Change visibility → Public.
 
 ## Dépannage
 
 - **Tester les calendriers** explique la plupart des problèmes : source inconnue, argument invalide (avec les suggestions de la source), source en panne.
 - Une source cassée ici l’est en général aussi dans Home Assistant : vérifiez, puis signalez-la à [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues).
-- Après le renommage d’un type de déchet, supprimez l’appareil et ajoutez-le à nouveau (les fonctionnalités sont identifiées par le nom du type).
+- Un calendrier est vide : vérifiez **Synchroniser ce calendrier** dans **Mes calendriers**.
 - Journaux : l’onglet Journaux de l’intégration ; `DEBUG=gladys-integration-sdk` pour le détail du SDK.
 
 ## Contribuer

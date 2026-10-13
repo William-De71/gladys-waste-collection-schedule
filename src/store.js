@@ -2,8 +2,7 @@
 // What the integration remembers between two restarts, in /data/state.json
 // (the only writable place of the container):
 //   - per schedule slot: the raw collections of the last successful fetch,
-//     what they were fetched with, the last error and the waste types ever
-//     seen (a device keeps the feature of a seasonal type in winter);
+//     what they were fetched with, and the last error;
 //   - the scene events already fired (a restart at 19:30 does not remind the
 //     same collection twice).
 // Raw collections are kept before the renames: a new rename applies without
@@ -15,7 +14,6 @@ import { dirname } from 'node:path';
 
 const VERSION = 1;
 const FIRED_KEEP_DAYS = 7;
-const MAX_KNOWN_TYPES = 40;
 
 /**
  * @description An empty slot record.
@@ -30,7 +28,6 @@ export function emptySlot() {
     raw: [],
     error: null,
     failures: 0,
-    knownTypes: [],
   };
 }
 
@@ -80,9 +77,6 @@ export function createStore(path = `${process.env.WCS_DATA_DIR || '/data'}/state
      */
     updateSlot(slot, values) {
       const record = { ...this.slot(slot), ...values };
-      if (values.knownTypes) {
-        record.knownTypes = [...new Set(values.knownTypes)].slice(-MAX_KNOWN_TYPES);
-      }
       state.slots[slot] = record;
       save();
       return record;

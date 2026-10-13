@@ -1,13 +1,9 @@
 // -----------------------------------------------------------------------------
 // The integration: every Gladys handler, registered before connect().
 //
-// One image, two integrations of the store. On each connection the container
-// asks Gladys for its calendar accounts: a calendar integration gets them, a
-// device integration gets 403 (calendar.js). Then:
-//   - device mode:   one device per schedule (devices.js), its states;
-//   - calendar mode: one calendar per schedule and user (calendar.js);
-//   - both:          the `upcoming` widget, the scene triggers and actions,
-//                    the configuration buttons.
+// A calendar integration (manifest `type: "calendar"`): one calendar per
+// schedule for every user who enabled it (calendar.js), the `upcoming`
+// widget, the scene triggers and actions, the configuration buttons.
 //
 // A one-minute tick drives everything: it fetches the schedules that are due
 // (every `refresh_hours`, sooner after a configuration change, with a growing
@@ -19,16 +15,14 @@
 import { logger as sdkLogger } from '@gladysassistant/integration-sdk';
 import { drawBin, familyOfImageKey } from './bins.js';
 import { BridgeError } from './bridge.js';
-import { createCalendarSync, isCalendarNotAllowed } from './calendar.js';
+import { createCalendarSync } from './calendar.js';
 import { normalizeConfig } from './config.js';
-import { buildDevice, buildStates, scheduleName, slotOfDevice } from './devices.js';
 import { dueReminders, fetchFailedData, TRIGGERS } from './events.js';
 import { pick, t, text, truncate } from './i18n.js';
-import { cleanCollections, upcomingDays } from './schedule.js';
+import { cleanCollections, scheduleName, upcomingDays } from './schedule.js';
 import { localClock } from './time.js';
 import { ALL, buildUpcomingWidget, relativeDay, WIDGET_ACTIONS, WIDGET_KEY } from './widgets.js';
 
-export const MODES = { DEVICE: 'device', CALENDAR: 'calendar' };
 export const ACTIONS = { SEARCH: 'search_source', TEST: 'test_sources' };
 export const SCENE_ACTIONS = { REFRESH: 'refresh', NEXT: 'get_next_collection' };
 
@@ -36,7 +30,6 @@ const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const TICK_MS = MINUTE;
 const RETRY_BASE_MS = 15 * MINUTE;
-const STATE_HEARTBEAT_MS = 6 * HOUR;
 const WIDGET_REFRESH_SPACING_MS = 11 * 1000;
 const MAX_RAW = 3000;
 const MAX_MESSAGE = 1800;
@@ -51,19 +44,17 @@ const MAX_MESSAGE = 1800;
  * @param {string} [deps.timeZone] - Timezone of the house (TZ by default).
  * @param {Function} [deps.sleep] - Delay between calendar writes.
  * @param {object} [deps.logger] - SDK logger.
- * @returns {object} `{ start, stop, tick, mode, refresh }`.
+ * @returns {object} `{ start, stop, tick, refresh, nextCollection }`.
  */
 export function createApp(
   gladys,
   { bridge, store, now = () => new Date(), timeZone, sleep, logger = sdkLogger },
 ) {
   let config = normalizeConfig(gladys.config ?? {});
-  let mode = null;
   let today = null;
   let timer = null;
   let ticking = null;
   let fetchChain = Promise.resolve();
-  let lastDiscovery = null;
   let lastConnection = null;
   let lastWidgetRefresh = 0;
   let pendingWidgetRefresh = null;
@@ -76,21 +67,6 @@ export function createApp(
 
   const collectionsOf = (slot, day = currentDay()) =>
     cleanCollections(store.slot(slot.slot).raw, config, day);
-
-  const typesOf = (slot) => {
-    const types = new Set();
-    for (const original of store.slot(slot.slot).knownTypes ?? []) {
-      const lower = String(original).toLowerCase();
-      if (config.hidden.has(lower)) {
-        continue;
-      }
-      const type = config.renames.get(lower) ?? original;
-      if (!config.hidden.has(type.toLowerCase())) {
-        types.add(type);
-      }
-    }
-    return [...types].sort((a, b) => a.localeCompare(b));
-  };
 
   /** @param {string} language - Names in that language. */
   const schedulesIn = (language) =>
@@ -174,7 +150,6 @@ export function createApp(
         raw,
         error: null,
         failures: 0,
-        knownTypes: [...(before.knownTypes ?? []), ...raw.map((entry) => entry.type)],
       });
     }
 
@@ -192,7 +167,6 @@ export function createApp(
       signature: slot.signature,
       raw: sameSource ? before.raw : [],
       fetchedAt: sameSource ? before.fetchedAt : null,
-      knownTypes: sameSource ? before.knownTypes : [],
       lastAttempt: attempt,
       error,
       failures: (before.failures ?? 0) + 1,
@@ -204,7 +178,7 @@ export function createApp(
           TRIGGERS.FETCH_FAILED,
           fetchFailedData(
             { ...slot, name: scheduleName(slot, config.language) },
-            pick(errorMessage(error, slot), 'en'),
+            pick(errorMessage(error, slot), config.language),
           ),
         ),
       );
@@ -241,44 +215,6 @@ export function createApp(
   };
 
   // --- Publishing --------------------------------------------------------------
-
-  const discoveredDevices = () =>
-    config.slots.map((slot) => buildDevice(gladys, slot, typesOf(slot), config.language));
-
-  const publishDiscovery = async (force = false) => {
-    const devices = discoveredDevices();
-    const key = JSON.stringify(devices);
-    if (!force && key === lastDiscovery) {
-      return;
-    }
-    await gladys.publishDiscoveredDevices(devices);
-    lastDiscovery = key;
-  };
-
-  const publishStates = async () => {
-    const day = currentDay();
-    const states = [];
-    for (const device of gladys.devices ?? []) {
-      const slot = config.slots.find((s) => s.slot === slotOfDevice(gladys, device.external_id));
-      if (!slot || !store.slot(slot.slot).fetchedAt) {
-        continue;
-      }
-      const created = new Set((device.features ?? []).map((feature) => feature.external_id));
-      states.push(
-        ...buildStates(
-          gladys,
-          slot,
-          collectionsOf(slot, day),
-          typesOf(slot),
-          day,
-          config.language,
-        ).filter((state) => created.has(state.device_feature_external_id)),
-      );
-    }
-    if (states.length > 0) {
-      await gladys.publishChangedStates(states, { heartbeat: STATE_HEARTBEAT_MS });
-    }
-  };
 
   const calendarSync = createCalendarSync(gladys, {
     schedules: (language) =>
@@ -342,12 +278,7 @@ export function createApp(
     if (!gladys.connected) {
       return;
     }
-    if (mode === MODES.DEVICE) {
-      await safely(() => publishDiscovery());
-      await safely(() => publishStates());
-    } else if (mode === MODES.CALENDAR) {
-      await safely(() => calendarSync.syncAll());
-    }
+    await safely(() => calendarSync.syncAll());
     await safely(() => publishConnection());
     refreshWidget();
   };
@@ -406,19 +337,6 @@ export function createApp(
       if (!configured.has(slot)) {
         store.dropSlot(slot);
       }
-    }
-  };
-
-  const detectMode = async () => {
-    try {
-      await gladys.getCalendarAccounts();
-      return MODES.CALENDAR;
-    } catch (error) {
-      if (isCalendarNotAllowed(error)) {
-        return MODES.DEVICE;
-      }
-      logger.warn(`cannot tell the integration type yet: ${error.message}`);
-      return mode;
     }
   };
 
@@ -519,22 +437,11 @@ export function createApp(
   gladys.on('connected', async () => {
     config = normalizeConfig(gladys.config ?? {});
     dropRemovedSlots();
-    mode = await detectMode();
-    logger.info(`connected, ${mode ?? 'unknown'} mode, ${config.slots.length} schedule(s)`);
-    lastDiscovery = null;
+    logger.info(`connected, ${config.slots.length} schedule(s)`);
     lastConnection = null;
+    // Calendars may have changed while disconnected: push everything again.
     calendarSync.forget();
-    if (mode === MODES.DEVICE) {
-      gladys.forgetPublishedStates();
-    }
     await publishAll();
-    tick();
-  });
-
-  gladys.onScanRequest(async () => {
-    if (mode === MODES.DEVICE) {
-      await publishDiscovery(true);
-    }
     tick();
   });
 
@@ -546,20 +453,8 @@ export function createApp(
     tick();
   });
 
-  gladys.onDeviceCreated(async (device) => {
-    if (slotOfDevice(gladys, device.external_id) === null) {
-      return;
-    }
-    // States published before the device existed were dropped by Gladys.
-    gladys.forgetPublishedStates(device.external_id);
-    await publishStates();
-    refreshWidget();
-  });
-
   gladys.onCalendarAccountUpdated(async (userSelector) => {
-    if (mode === MODES.CALENDAR) {
-      await calendarSync.syncUser(userSelector);
-    }
+    await calendarSync.syncUser(userSelector);
   });
 
   gladys.onWidgetGet(WIDGET_KEY, async ({ settings }) =>
@@ -619,7 +514,10 @@ export function createApp(
     const next = nextCollection(slots);
     return {
       success: failed === -1,
-      error: failed === -1 ? '' : pick(errorMessage(records[failed].error, slots[failed]), 'en'),
+      error:
+        failed === -1
+          ? ''
+          : pick(errorMessage(records[failed].error, slots[failed]), config.language),
       next_date: next?.date ?? '',
       next_waste_types: next?.types.join(', ') ?? '',
       days: next?.days ?? -1,
@@ -687,12 +585,8 @@ export function createApp(
     },
     tick,
     refresh: (options) => refresh(config.slots, options),
-    get mode() {
-      return mode;
-    },
     /** For the tests: what the next collection is. */
     nextCollection: (wasteType) => nextCollection(config.slots, wasteType),
-    discoveredDevices,
   };
 }
 

@@ -14,11 +14,11 @@ The dates come from the Python library
 (MIT, nearly 1,000 sources), pinned in the Dockerfile and run unchanged by
 `python/bridge.py`, one short process per request. Cloud only.
 
-**One image, two store integrations**: this repository (`type: "device"`) and
-[gladys-waste-collection-calendar](https://github.com/William-De71/gladys-waste-collection-calendar)
-(`type: "calendar"`, its manifest follows the releases of this one). The
-container finds its mode on each connection: `getCalendarAccounts()` answers a
-calendar integration and refuses (403) a device one.
+A **calendar integration** (`type: "calendar"`, Gladys 5.2.0+): one calendar
+per schedule for every user who enabled it in "My calendars", plus a
+dashboard widget, scene triggers and actions. No devices: Gladys does not let
+one manifest be both, and a second repository for a device variant was tried
+and dropped (two store entries for one thing confused users).
 
 ## Commands
 
@@ -40,15 +40,14 @@ scripts/build-cover.sh                    # cover.jpg from cover.svg (Inkscape, 
 
 ```
 index.js                     SDK wiring only: createApp(gladys, { bridge, store }) + connect
-src/app.js                   every handler, the one-minute tick, the mode (device/calendar)
+src/app.js                   every handler, the one-minute tick, the publications
 src/bridge.js                spawns python/bridge.py: one process at a time, timeout, minimal env
 python/bridge.py             fetch / search / version over stdin-stdout JSON
 python/check_sources.py      smoke test: every bundled source imports (CI, wcs-update.yml)
 src/config.js                config_schema -> slots (source, JSON or key=value arguments), renames
 src/schedule.js              collections: window, renames, hidden types, next ones, type keys
 src/store.js                 /data/state.json: raw dates per slot, errors, reminders fired
-src/devices.js               device mode: one device per slot, days per waste type
-src/calendar.js              calendar mode: one calendar per slot and user, windows of 500 events
+src/calendar.js              one calendar per slot and user, windows of 500 events
 src/events.js                reminders (collection_tomorrow / waste_type_tomorrow / collection_today)
 src/widgets.js               the `upcoming` widget (pure, reused by docs/illustrations/gen.mjs)
 src/bins.js                  waste type -> family -> color and bin pictogram (pngjs)
@@ -59,18 +58,12 @@ src/time.js                  calendar dates in the timezone of the house (TZ)
 
 ## Rules
 
-- **External ids are forever**: `gladys.externalIds('schedule', slot)`, feature
-  keys `next_days`, `next_types`, `type_<typeKey(type)>`; calendar and event ids
-  `ext:<selector>:<user>:schedule-<slot>` and `…:s<slot>:<date>:<typeKey>`.
-  Config, action, widget, trigger, field, variable and output keys too. Per
-  feature, `category`, `type`, `unit`, `min`, `max` and `step` are compared by
-  the "Update" button of the Discover screen: change them only with a
-  migration note in the docs.
-- **Polling**: `should_poll: false`; the tick fetches every `refresh_hours`
-  and publishes at midnight (Gladys polls at most once a minute).
-- **States**: `publishChangedStates` (6 h heartbeat), only for the features the
-  user created; everything again in `onDeviceCreated`, then
-  `requestWidgetRefresh`.
+- **External ids are forever**: calendars `ext:<selector>:<user>:schedule-<slot>`,
+  events `ext:<selector>:<user>:s<slot>:<date>:<typeKey>`. Config, action,
+  widget, trigger, field, variable and output keys too.
+- **Calendars**: pushed after each fetch that changed something and once a
+  day (the window slides), at most 30 writes a minute; a calendar the user
+  stopped synchronizing is skipped; removed schedules delete their calendars.
 - **Scene events** on transitions only, flat scalar data; `fetch_failed`
   never after a refresh asked by a scene action (loop risk).
 - **The engine**: never pass the Gladys token or anything from the config but
@@ -97,10 +90,8 @@ src/time.js                  calendar dates in the timezone of the house (TZ)
 
 ## Pitfalls
 
-- The calendar API answers 403 to a device integration: that is the mode
-  detection, not an error.
 - A card `date` other than midnight UTC is shown with a time by the Gladys
   front.
-- Feature names are not shown when a feature is alone of its type: devices are
-  named after their schedule.
-- Waste types have no identifier upstream: a renamed type is a new feature.
+- Waste types have no identifier upstream: event ids use the type name.
+- Running the validator of the Gladys core outside its repository creates a
+  `gladys-development.duckdb` file in the current folder.

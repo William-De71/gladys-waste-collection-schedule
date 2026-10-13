@@ -1,18 +1,12 @@
 // -----------------------------------------------------------------------------
-// Calendar mode: the collections in the Gladys calendar.
+// The collections in the Gladys calendar (manifest `type: "calendar"`).
 //
-// The same image runs as two integrations of the store: the device one
-// (gladys-waste-collection-schedule) and the calendar one
-// (gladys-waste-collection-calendar, manifest `type: "calendar"`). The core
-// answers the calendar API with 403 CALENDAR_NOT_ALLOWED to anything but a
-// calendar integration: that answer tells the container its mode.
-//
-// In calendar mode, every user who enabled the integration gets one calendar
+// Every user who enabled the integration in "My calendars" gets one calendar
 // per schedule ("Waste collection – Home"), with one all-day event per
 // collection and waste type. A window covers what is kept (35 days back, 400
 // ahead): a collection the source drops disappears from Gladys too. The
-// calendars are private when created: the user shares them (for the scenes)
-// from the calendar settings of Gladys.
+// calendars are private when created: the user shares them with the household
+// (and the scenes) from "My calendars".
 //
 // Limits of the core: 500 events per request (larger windows are split), 30
 // calendar writes per minute per integration (writes are spaced by 2.1 s).
@@ -28,17 +22,6 @@ import { addDays } from './time.js';
 export const MAX_EVENTS_PER_REQUEST = 500;
 export const WRITE_SPACING_MS = 2100;
 const COLOR = '#2e7d32';
-
-/**
- * @description Whether the core refused the calendar API to this integration.
- * @param {Error} error - Error of getCalendarAccounts().
- * @returns {boolean} True for 403 CALENDAR_NOT_ALLOWED (a device integration).
- */
-export function isCalendarNotAllowed(error) {
-  // GET /calendar/account has no other 403: the code is FORBIDDEN and the
-  // message CALENDAR_NOT_ALLOWED in Gladys 5.2.0.
-  return error?.status === 403;
-}
 
 /**
  * @description The external id of the calendar of a schedule for a user.

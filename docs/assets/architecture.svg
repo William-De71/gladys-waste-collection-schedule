@@ -13,9 +13,9 @@
   <text x="145" y="72" text-anchor="middle" font-size="20" font-weight="700" fill="#1d4f8c">Gladys Assistant</text>
   <g font-size="14" fill="#24303c">
     <rect x="40" y="92" width="210" height="38" rx="8" fill="#ffffff" stroke="#b9cde6"/>
-    <text x="145" y="116" text-anchor="middle">Discover · devices · states</text>
+    <text x="145" y="116" text-anchor="middle">Calendar: one per schedule</text>
     <rect x="40" y="140" width="210" height="38" rx="8" fill="#ffffff" stroke="#b9cde6"/>
-    <text x="145" y="164" text-anchor="middle">Calendar (calendar variant)</text>
+    <text x="145" y="164" text-anchor="middle">My calendars (per user)</text>
     <rect x="40" y="188" width="210" height="38" rx="8" fill="#ffffff" stroke="#b9cde6"/>
     <text x="145" y="212" text-anchor="middle">Scenes: triggers, actions</text>
     <rect x="40" y="236" width="210" height="38" rx="8" fill="#ffffff" stroke="#b9cde6"/>
@@ -37,7 +37,7 @@
   <rect x="400" y="104" width="260" height="78" rx="10" fill="#ffffff" stroke="#a7d8c6"/>
   <text x="530" y="128" text-anchor="middle" font-size="15" font-weight="600" fill="#24303c">Node.js 24 + Gladys SDK</text>
   <text x="530" y="148" text-anchor="middle" font-size="12" fill="#46505a">tick every minute: fetch, midnight,</text>
-  <text x="530" y="166" text-anchor="middle" font-size="12" fill="#46505a">reminders, devices or calendars</text>
+  <text x="530" y="166" text-anchor="middle" font-size="12" fill="#46505a">reminders, calendars</text>
   <line x1="530" y1="182" x2="530" y2="216" stroke="#46505a" stroke-width="2" marker-end="url(#arrow)"/>
   <text x="540" y="204" font-size="11" fill="#46505a">stdin / stdout JSON</text>
   <rect x="400" y="218" width="260" height="66" rx="10" fill="#ffffff" stroke="#a7d8c6"/>

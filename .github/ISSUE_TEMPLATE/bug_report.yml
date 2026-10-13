@@ -18,17 +18,8 @@ body:
     id: integration-version
     attributes:
       label: Integration version
-      description: Integrations → Waste Collection Schedule (or Waste Collection Calendar), or Settings → Supervision.
+      description: Integrations → Waste Collection Schedule, Supervision tab.
       placeholder: '0.1.0'
-    validations:
-      required: true
-  - type: dropdown
-    id: variant
-    attributes:
-      label: Variant
-      options:
-        - Waste Collection Schedule (devices)
-        - Waste Collection Calendar (calendar)
     validations:
       required: true
   - type: input

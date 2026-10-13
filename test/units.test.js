@@ -263,12 +263,11 @@ test('state file: saved, reloaded, fired events forgotten after a week', () => {
   try {
     store.updateSlot('1', {
       raw: [{ date: '2026-10-16', type: 'A' }],
-      knownTypes: ['A', 'A', 'B'],
     });
     store.markFired('x', '2026-10-01');
     store.markFired('y', '2026-10-15');
     const again = createStore(path);
-    assert.deepEqual(again.slot('1').knownTypes, ['A', 'B']);
+    assert.deepEqual(again.slot('1').raw, [{ date: '2026-10-16', type: 'A' }]);
     assert.ok(!again.wasFired('x'));
     assert.ok(again.wasFired('y'));
     again.dropSlot('1');
@@ -288,7 +287,7 @@ test('texts: every language, placeholders filled, truncation', () => {
     de: 'In 3 T.',
     es: 'En 3 d',
   });
-  assert.equal(text('deviceName', 'xx', { name: 'Home' }), 'Waste collection Home');
+  assert.equal(text('calendarName', 'xx', { name: 'Home' }), 'Waste collection – Home');
   assert.equal(text('connectionError', 'fr', { name: 'A', error: { en: 'x', fr: 'y' } }), 'A : y');
   assert.equal(truncate('abcdef', 4), 'abc…');
 });

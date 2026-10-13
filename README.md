@@ -5,18 +5,17 @@
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/William-De71/gladys-waste-collection-schedule?sort=semver)](https://github.com/William-De71/gladys-waste-collection-schedule/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/William-De71/gladys-waste-collection-schedule/release.yml?branch=main&label=CI)](https://github.com/William-De71/gladys-waste-collection-schedule/actions/workflows/release.yml)
-[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.1.1-2f6fb5)](https://gladysassistant.com)
+[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.2.0-2f6fb5)](https://gladysassistant.com)
 
 ![Waste Collection Schedule for Gladys Assistant](cover.jpg)
 
-The waste collection dates of your address in Gladys Assistant, from the nearly 1,000 sources of [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule) (towns, waste operators, apps and ICS calendar links of about thirty countries). Devices, a reminder the evening before, a dashboard widget and, in its calendar variant, the collections in the Gladys calendar.
+The waste collection dates of your address in Gladys Assistant, from the nearly 1,000 sources of [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule) (towns, waste operators, apps and ICS calendar links of about thirty countries): in the Gladys calendar, as a reminder the evening before and in a dashboard widget.
 
 ## Features
 
 - **Nearly 1,000 sources**: the Waste Collection Schedule library itself (MIT), bundled and pinned in the image, updated by a weekly workflow. Any ICS calendar link works too.
 - **Up to three schedules** (a second home, or a second source for the same address).
-- **Devices**: days until the next collection, its waste types, and days until the next collection of each waste type.
-- **Calendar variant** ([Waste Collection Calendar](https://github.com/William-De71/gladys-waste-collection-calendar), same image): one calendar per schedule for each user who enables it.
+- **Calendar**: one calendar per schedule for every user who enables the integration in **My calendars**, with an all-day event per collection and waste type.
 - **Dashboard widget** "Upcoming collections", with a bin of the right color per collection day.
 - **Scene triggers**: collection tomorrow (evening reminder), waste type collected tomorrow, collection today (morning reminder), update failed.
 - **Scene actions**: get the next collection (optionally of one waste type), update the collection dates.
@@ -30,7 +29,6 @@ The waste collection dates of your address in Gladys Assistant, from the nearly 
 ```mermaid
 flowchart LR
   subgraph Gladys["Gladys Assistant"]
-    D[Discover / devices]
     C[Calendar]
     S[Scenes]
     W[Dashboard widget]
@@ -47,7 +45,7 @@ flowchart LR
   P -- HTTPS --> Sources
 ```
 
-One image runs as two integrations of the store. On every connection, the container asks Gladys for its calendar accounts: a calendar integration gets them, a device integration gets a 403, and the container picks its mode. A one-minute tick fetches the schedules that are due (one short Python process each, one at a time), publishes the new values at midnight and fires the reminders.
+A one-minute tick fetches the schedules that are due (one short Python process each, one at a time), pushes the calendars of every user who enabled the integration, refreshes the widget at midnight and fires the reminders.
 
 ```mermaid
 sequenceDiagram
@@ -62,24 +60,17 @@ sequenceDiagram
   P->>S: HTTPS request
   S-->>P: collection dates
   P-->>I: {"ok": true, "collections": [...]}
-  I->>G: publishDiscoveredDevices (device per schedule)
-  U->>G: adds the device (Discover tab)
-  G->>I: device created
-  I->>G: publishChangedStates (days until each collection)
+  U->>G: enables the integration (My calendars)
+  I->>G: publishCalendars + publishCalendarEvents
+  G->>U: the collections in the calendar view
   Note over I,G: every evening at the reminder time
   I->>G: publishSceneEvent("collection_tomorrow", ...)
   G->>U: the scene sends "Tomorrow: recycling"
 ```
 
-## Devices and features
+## Calendar
 
-| Feature                                   | Category / type      | Unit | Range    | Value                                                                   |
-| ----------------------------------------- | -------------------- | ---- | -------- | ----------------------------------------------------------------------- |
-| Next collection (days)                    | `duration / integer` | days | -1 – 400 | days until the next collection: 0 today, 1 tomorrow, -1 nothing planned |
-| Next collection                           | `text / text`        |      |          | the waste types of that collection                                      |
-| _&lt;waste type&gt;_ (days), one per type | `duration / integer` | days | -1 – 400 | days until the next collection of that type                             |
-
-One device per schedule, external id `ext:<selector>:schedule:<1|2|3>`. Not polled by Gladys (`should_poll: false`): the integration publishes the values after each fetch and at midnight. The waste type names are those of the source; a waste type keeps its feature when it is out of season (value -1).
+One calendar per schedule ("Waste collection – Home", in the language of each user) for every user who enabled the integration in **My calendars**, external id `ext:<selector>:<user>:schedule-<1|2|3>`. One all-day event per collection and waste type, named after the waste type, from 35 days back to 400 days ahead. The window is pushed again when the source changes and once a day: a collection the source moves or drops moves or disappears in Gladys too. A calendar starts private: **Share with the household** shows it to the household and to the calendar triggers of the scenes. The widget and the scene triggers of the integration do not depend on it.
 
 ## Transport
 
@@ -113,13 +104,9 @@ Examples:
 
 A reminder fires once per collection, even across restarts, up to 3 hours late if Gladys was off. `fetch_failed` never fires after a refresh asked by a scene (no loop).
 
-## Calendar variant
-
-[Waste Collection Calendar](https://github.com/William-De71/gladys-waste-collection-calendar) is the same image with a `type: "calendar"` manifest (Gladys 5.2.0 or later). Every user who enables it in **My calendars** gets one calendar per schedule: an all-day event per collection and waste type, from 35 days back to 400 days ahead, pushed again when the source changes. The widget, the triggers and the actions are the same. Its repository only holds the manifest, the docs and a workflow that follows the releases of this one.
-
 ## Requirements
 
-- Gladys Assistant **5.1.1 or later** (widgets and scene triggers need 5.1; older instances cannot install the integration). 5.2.0 or later for the calendar variant.
+- Gladys Assistant **5.2.0 or later** (calendar integrations; older instances cannot install the integration).
 - Internet access from Gladys.
 - A source for your address: see the [list of the sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), or the **ics** source with a calendar link.
 
@@ -133,7 +120,7 @@ A reminder fires once per collection, even across restarts, up to 3 hours late i
 
 | Field                   | Type   | Default | Meaning                                                                                             |
 | ----------------------- | ------ | ------- | --------------------------------------------------------------------------------------------------- |
-| `name_1` … `name_3`     | string |         | name of the schedule (device, widget, scenes)                                                       |
+| `name_1` … `name_3`     | string |         | name of the schedule (calendar, widget, scenes)                                                     |
 | `source_1` … `source_3` | string |         | Waste Collection Schedule source, e.g. `ics`, `opendata_bordeauxmetropole_fr` (schedule 1 required) |
 | `args_1` … `args_3`     | string |         | arguments: JSON object or `key=value; key=value`                                                    |
 | `rename`                | string |         | `Original=New; …`                                                                                   |
@@ -141,14 +128,14 @@ A reminder fires once per collection, even across restarts, up to 3 hours late i
 | `reminder_time`         | select | `19:00` | evening reminder, 16:00 to 22:00 or `off`                                                           |
 | `morning_time`          | select | `06:00` | morning reminder, 05:00 to 10:00 or `off`                                                           |
 | `refresh_hours`         | select | `12`    | update every 6, 12 or 24 hours                                                                      |
-| `language`              | select | `en`    | language of the device and feature names                                                            |
+| `language`              | select | `en`    | language of the texts sent to scenes (default names, errors)                                        |
 
 Buttons of the configuration page: **Find a source** (search by town, operator or country: source, known arguments, arguments to fill in, documentation link) and **Test the schedules** (asks every source now and shows what it returned, or the error with the suggestions of the source).
 
 ## Usage
 
 1. Find your source with **Find a source**, fill in schedule 1, save, press **Test the schedules**.
-2. Discover tab → add the device "Waste collection _&lt;name&gt;_".
+2. Each user presses **Enable for me** in **My calendars**.
 3. Add the **Upcoming collections** widget to a dashboard.
 4. Create a scene on **Waste collection tomorrow** to be reminded.
 
@@ -185,7 +172,7 @@ Try one source directly: `echo '{"command": "fetch", "source": "ics", "args": {"
 
 ## Tests
 
-`npm test` runs the whole integration against the fake Gladys of the SDK (devices, states, reminders across midnight and DST, widget content validated by `validateWidgetContent`, calendars), the real `python/bridge.py` against a stand-in library, the manifest against the code, the translations and the release script. The CI also builds the image and starts it like Gladys does (read-only, 256 MB, no network): the engine answers and every bundled source imports.
+`npm test` runs the whole integration against the fake Gladys of the SDK (calendars, reminders across midnight and DST, widget content validated by `validateWidgetContent`, calendars), the real `python/bridge.py` against a stand-in library, the manifest against the code, the translations and the release script. The CI also builds the image and starts it like Gladys does (read-only, 256 MB, no network): the engine answers and every bundled source imports.
 
 ## Release process
 
@@ -209,14 +196,13 @@ flowchart LR
 - 1.0.0 is a manual decision: Actions → Release → Run workflow, `release-as: 1.0.0`. `dry-run` shows the version and the changelog without publishing.
 - **Protected `main`**: the release pushes a commit to `main`. With a branch protection or a ruleset, allow GitHub Actions to bypass it (or use a GitHub App), otherwise the release stops after the image.
 - **Waste Collection Schedule updates**: `wcs-update.yml` opens a pull request every time upstream publishes a release (enable Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"). A pull request opened by GitHub Actions starts no workflow: close and reopen it to run the CI.
-- **Calendar variant**: the [calendar repository](https://github.com/William-De71/gladys-waste-collection-calendar) checks every 6 hours for a new release here and follows it once the image is public.
 - After the first release, make the package public: Package settings → Change visibility → Public.
 
 ## Troubleshooting
 
 - **Test the schedules** explains most problems: unknown source, invalid argument (with the suggestions of the source), source down.
 - A source broken here is usually broken in Home Assistant too: check, then report it to [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule/issues).
-- After a rename of a waste type, delete the device and add it again (features are keyed by type name).
+- A calendar is empty: check **Synchronize this calendar** in **My calendars**.
 - Logs: the Logs tab of the integration; `DEBUG=gladys-integration-sdk` for the SDK details.
 
 ## Contributing

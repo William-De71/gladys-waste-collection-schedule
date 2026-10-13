@@ -1,19 +1,15 @@
 // The whole integration against the fake Gladys of the SDK
 // (`@gladysassistant/integration-sdk/testing`, which checks the discovered
-// devices, the states, the scene events and the calendars like the host API),
+// scene events and the calendars like the host API),
 // a fake engine and a clock moved by hand, in Europe/Paris.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import {
-  GladysApiError,
-  validateWidgetContent,
-  validateWidgetImage,
-} from '@gladysassistant/integration-sdk';
+import { validateWidgetContent, validateWidgetImage } from '@gladysassistant/integration-sdk';
 
-import { createApp, MODES } from '../src/app.js';
+import { createApp } from '../src/app.js';
 import { BridgeError } from '../src/bridge.js';
 import {
   bordeauxCollections,
@@ -35,27 +31,23 @@ const CONFIG = {
   language: 'fr',
 };
 
+// A user who enabled the integration in "My calendars".
+const JOHN = { user: { selector: 'john', firstname: 'John', language: 'fr' }, config: {} };
+
 const OK = { ok: true, title: 'Bordeaux Métropole', collections: bordeauxCollections() };
 
 /**
  * @description An integration wired to the fake Gladys.
- * @param {object} [options] - `{ config, answers, mode, start, fake }`.
+ * @param {object} [options] - `{ config, answers, start, fake }`.
  * @returns {Promise<object>} `{ gladys, fake, app, bridge, clock, store, cleanup }`.
  */
 async function setup({
   config = CONFIG,
   answers = { opendata_bordeauxmetropole_fr: OK },
-  mode = MODES.DEVICE,
   start = '2026-10-15T08:00:00Z',
   fake = {},
 } = {}) {
-  const gladys = createFakeGladys({ config, ...fake });
-  if (mode === MODES.DEVICE) {
-    // The answer of Gladys to a device integration.
-    gladys.getCalendarAccounts = async () => {
-      throw new GladysApiError(403, 'FORBIDDEN', 'CALENDAR_NOT_ALLOWED');
-    };
-  }
+  const gladys = createFakeGladys({ config, calendarAccounts: [JOHN], ...fake });
   const bridge = fakeBridge(answers);
   const clock = fakeClock(start);
   const { store, cleanup } = tempStore();
@@ -72,58 +64,51 @@ async function setup({
   return { gladys, fake: gladys.fake, app, bridge, clock, store, cleanup };
 }
 
-const deviceOf = (fake) => fake.discoveredDevices[0];
-const feature = (device, key) => device.features.find((f) => f.external_id.endsWith(`:${key}`));
+const eventsOf = (fake, calendar) =>
+  fake.calendarEvents.filter((event) => event.calendar_external_id.endsWith(calendar));
 
-test('device mode: one device per schedule, a feature per waste type', async () => {
-  const { fake, app, bridge, cleanup } = await setup();
+test('a calendar per schedule, an all-day event per collection and waste type', async () => {
+  const { fake, bridge, cleanup } = await setup();
   try {
-    assert.equal(app.mode, MODES.DEVICE);
     assert.equal(bridge.calls.length, 1);
     assert.deepEqual(bridge.calls[0].args, { city: 'Bordeaux', address: '20 Cours Pasteur' });
-    assert.equal(fake.discoveredDevices.length, 1);
-    const device = deviceOf(fake);
-    assert.equal(device.name, 'Collecte des déchets Maison');
-    assert.equal(device.external_id, 'ext:test-integration:schedule:1');
-    assert.deepEqual(device.features.map((f) => f.external_id.split(':').pop()).sort(), [
-      'next_days',
-      'next_types',
-      'type_ordures_menageres',
-      'type_sapins_de_noel',
-      'type_tri_selectif',
-      'type_verre',
-    ]);
-    // No state before the device exists: Gladys would drop them.
-    assert.equal(fake.states.length, 0);
+    assert.equal(fake.discoveredDevices.length, 0, 'a calendar integration has no devices');
+    assert.deepEqual(
+      eventsOf(fake, ':john:schedule-1').map((event) => `${event.start} ${event.name}`),
+      [
+        '2026-10-12 Ordures ménagères',
+        '2026-10-16 Ordures ménagères',
+        '2026-10-16 Tri sélectif',
+        '2026-10-19 Ordures ménagères',
+        '2026-10-23 Verre',
+        '2026-10-26 Ordures ménagères',
+        '2026-10-30 Tri sélectif',
+        '2027-01-08 Sapins de Noël',
+      ],
+    );
     assert.equal(fake.connectionStatus.connected, true);
   } finally {
     cleanup();
   }
 });
 
-test('device mode: states once the device is created, then at midnight', async () => {
-  const { gladys, fake, clock, app, cleanup } = await setup();
+test('midnight: the widget moves on, the window of the calendar slides once', async () => {
+  const { fake, clock, app, cleanup } = await setup();
   try {
-    const device = deviceOf(fake);
-    await fake.deviceCreated(device);
-    const id = (key) => feature(device, key).external_id;
-    assert.equal(fake.lastState(id('next_days')), 1);
-    assert.equal(fake.lastState(id('next_types')), 'Ordures ménagères, Tri sélectif');
-    assert.equal(fake.lastState(id('type_verre')), 8);
-    assert.equal(fake.lastState(id('type_sapins_de_noel')), 85);
+    const pushes = fake.publishedCalendarEvents.length;
+    const tile = async () =>
+      (await fake.widgetGet('upcoming', { settings: {}, language: 'en' })).data.content
+        .components[0].value.en;
+    assert.equal(await tile(), 'Tomorrow');
+    clock.set('2026-10-15T22:00:30Z'); // midnight in Paris
+    await app.tick();
+    assert.equal(await tile(), 'Today');
+    // The 35-day window starts one day later: one push per calendar and day.
+    assert.equal(fake.publishedCalendarEvents.length, pushes + 1);
+    clock.set('2026-10-15T23:00:00Z');
+    await app.tick();
+    assert.equal(fake.publishedCalendarEvents.length, pushes + 1);
     assert.ok(fake.widgetRefreshes.includes('upcoming'));
-
-    // Midnight in Paris: the collection is today.
-    clock.set('2026-10-15T22:00:30Z');
-    await app.tick();
-    assert.equal(fake.lastState(id('next_days')), 0);
-    assert.equal(fake.lastState(id('type_verre')), 7);
-
-    // The day after the last "Tri sélectif": nothing planned anymore.
-    clock.set('2026-10-31T08:00:00Z');
-    await app.tick();
-    assert.equal(fake.lastState(id('type_tri_selectif')), -1);
-    assert.equal(gladys.connected, true);
   } finally {
     cleanup();
   }
@@ -203,7 +188,8 @@ test('a failing source: one fetch_failed event, a retry later, the error shown',
           schedule: '1',
           schedule_name: 'Maison',
           source: 'opendata_bordeauxmetropole_fr',
-          error: 'the source failed: HTTPError: 503',
+          // In the language of the configuration (French here).
+          error: 'la source a échoué : HTTPError: 503',
         },
       },
     ]);
@@ -426,16 +412,21 @@ test('configuration: renames, hidden types, invalid arguments, removed schedule'
       ['opendata_bordeauxmetropole_fr', 'ics'],
     );
     assert.deepEqual(bridge.calls[1].args, { url: 'https://example.org/cal.ics' });
-    const keys = fake.discoveredDevices[0].features.map((f) => f.external_id.split(':').pop());
-    assert.ok(keys.includes('type_bac_jaune'));
-    assert.ok(!keys.includes('type_tri_selectif'));
-    assert.ok(!keys.includes('type_sapins_de_noel'));
-    assert.equal(fake.discoveredDevices.length, 3);
+    const names = new Set(eventsOf(fake, ':john:schedule-1').map((event) => event.name));
+    assert.ok(names.has('Bac jaune'));
+    assert.ok(!names.has('Tri sélectif'));
+    assert.ok(!names.has('Sapins de Noël'));
+    // Schedule 2 failed (unknown source here), schedule 3 never reached the
+    // engine: no calendar for them until they work.
+    assert.deepEqual(
+      fake.calendars.map((calendar) => calendar.external_id.split(':').pop()),
+      ['schedule-1'],
+    );
     // Schedule 3: rejected before reaching the engine.
     assert.match(fake.connectionStatus.message.en, /Schedule 2: unknown source "ics"|JSON/);
 
     await fake.configUpdated(CONFIG);
-    assert.equal(fake.discoveredDevices.length, 1);
+    assert.deepEqual(fake.deletedCalendars, []);
   } finally {
     cleanup();
   }
@@ -446,7 +437,7 @@ test('no source configured: a clear status and widget', async () => {
   try {
     assert.equal(bridge.calls.length, 0);
     assert.equal(fake.connectionStatus.connected, false);
-    assert.equal(fake.discoveredDevices.length, 0);
+    assert.equal(fake.publishedCalendars.length, 0);
     const content = (await fake.widgetGet('upcoming', { settings: {} })).data.content;
     assert.deepEqual(validateWidgetContent(content), []);
     assert.equal(content.components[0].type, 'text');
@@ -455,18 +446,13 @@ test('no source configured: a clear status and widget', async () => {
   }
 });
 
-test('calendar mode: one calendar per schedule for each enabled user', async () => {
+test('every enabled user gets the calendars, in their language', async () => {
   const accounts = [
     { user: { selector: 'john', firstname: 'John', language: 'fr' }, config: {} },
     { user: { selector: 'jane', firstname: 'Jane', language: 'de' }, config: {} },
   ];
-  const { fake, app, cleanup } = await setup({
-    mode: MODES.CALENDAR,
-    fake: { calendarAccounts: accounts },
-  });
+  const { fake, app, cleanup } = await setup({ fake: { calendarAccounts: accounts } });
   try {
-    assert.equal(app.mode, MODES.CALENDAR);
-    assert.equal(fake.discoveredDevices.length, 0, 'no device in calendar mode');
     assert.deepEqual(
       fake.publishedCalendars.map((batch) => [batch.user, batch.calendars[0].name]),
       [
@@ -498,12 +484,9 @@ test('calendar mode: one calendar per schedule for each enabled user', async () 
   }
 });
 
-test('calendar mode: a disabled calendar is skipped, a removed schedule deleted', async () => {
+test('a calendar not synchronized is skipped, a removed schedule deleted', async () => {
   const accounts = [{ user: { selector: 'john', firstname: 'John', language: 'en' }, config: {} }];
-  const { fake, cleanup } = await setup({
-    mode: MODES.CALENDAR,
-    fake: { calendarAccounts: accounts },
-  });
+  const { fake, cleanup } = await setup({ fake: { calendarAccounts: accounts } });
   try {
     const calendar = fake.calendars.find((c) => c.external_id.endsWith(':schedule-1'));
     calendar.sync = false;

@@ -1,16 +1,10 @@
 // The manifest and the code agree: every declared action, trigger, widget and
 // configuration key has its code, every version says the same thing, and the
-// discovered devices respect what the Gladys core expects but does not check
-// (see CLAUDE.md, "Pitfalls").
+// manifest respects what the store and the Gladys core expect.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import {
-  DEVICE_FEATURE_CATEGORIES,
-  DEVICE_FEATURE_TYPES,
-  DEVICE_FEATURE_UNITS,
-} from '@gladysassistant/integration-sdk';
 import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 
 import { ACTIONS, createApp, SCENE_ACTIONS } from '../src/app.js';
@@ -24,7 +18,6 @@ import {
   REMINDER_TIMES,
   SLOTS,
 } from '../src/config.js';
-import { buildDevice } from '../src/devices.js';
 import { TRIGGERS } from '../src/events.js';
 import { LANGUAGES } from '../src/i18n.js';
 import { ALL, COUNTS, DEFAULT_COUNT, WIDGET_KEY } from '../src/widgets.js';
@@ -51,10 +44,11 @@ test('one version everywhere, image of this repository', () => {
 });
 
 test('store rules: type, Gladys version, transports, categories, descriptions', () => {
-  assert.equal(manifest.type, 'device');
-  // widgets, scene_triggers and scene_actions need 5.1.0; 5.1.1 is the
-  // first release validated with this manifest.
-  assert.equal(manifest.gladys_version, '>=5.1.1');
+  // A calendar integration needs 5.2.0 (code-enforced by the store indexer).
+  assert.equal(manifest.type, 'calendar');
+  assert.equal(manifest.gladys_version, '>=5.2.0');
+  // Nothing to ask per user: every user just enables the integration.
+  assert.equal(manifest.account_schema, undefined);
   // Every source is a web site or an API: nothing on the local network.
   assert.deepEqual(manifest.transports, ['cloud']);
   assert.deepEqual(manifest.categories, ['services']);
@@ -168,42 +162,4 @@ test('widget settings match the code', () => {
   );
   assert.equal(settings.count.default, String(DEFAULT_COUNT));
   assert.equal(settings.show_refresh.default, true);
-});
-
-// Pairs the Gladys front labels (front/src/config/i18n/*.json,
-// deviceFeatureCategory.<category>.<type>, checked on v5.1.4 and v5.2.0): a
-// pair without a label shows "Device (undefined)" and no icon.
-const LABELLED_PAIRS = new Set(['duration/integer', 'text/text']);
-
-test('discovered devices: what the core needs but does not check', () => {
-  const gladys = createFakeGladys();
-  const device = buildDevice(
-    gladys,
-    { slot: '1', name: 'Home', source: 'ics' },
-    ['Recycling', 'Glass', 'Garden waste'],
-    'en',
-  );
-  assert.equal(device.should_poll, false);
-  assert.equal(device.poll_frequency, undefined);
-  assert.ok(device.external_id.startsWith('ext:test-integration:schedule:'));
-  const categories = Object.values(DEVICE_FEATURE_CATEGORIES);
-  for (const feature of device.features) {
-    for (const key of ['min', 'max', 'read_only', 'has_feedback']) {
-      assert.notEqual(feature[key], undefined, `${feature.external_id}.${key}`);
-    }
-    assert.ok(feature.min <= feature.max);
-    assert.ok(categories.includes(feature.category));
-    const typeGroup = Object.entries(DEVICE_FEATURE_CATEGORIES).find(
-      ([, value]) => value === feature.category,
-    )[0];
-    assert.ok(Object.values(DEVICE_FEATURE_TYPES[typeGroup]).includes(feature.type));
-    assert.ok(LABELLED_PAIRS.has(`${feature.category}/${feature.type}`));
-    if (feature.unit) {
-      assert.ok(Object.values(DEVICE_FEATURE_UNITS).includes(feature.unit));
-    }
-    assert.equal(feature.read_only, true);
-    assert.ok(feature.name.length > 0 && feature.name.length <= 100);
-    assert.ok(feature.external_id.startsWith(`${device.external_id}:`));
-  }
-  assert.equal(new Set(device.features.map((f) => f.external_id)).size, device.features.length);
 });

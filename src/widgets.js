@@ -6,9 +6,8 @@
 //   [status] one line per schedule: dates known, or the update error
 //   [button] Refresh (asks the sources again)
 //
-// Built inline from the cached collections, never from device features: the
-// widget works in calendar mode too (no devices) and before any device is
-// added. `buildUpcomingWidget` is a pure function, also used by
+// Built inline from the cached collections: the widget works even if no user
+// enabled the calendars. `buildUpcomingWidget` is a pure function, also used by
 // docs/illustrations/gen.mjs for the generated screenshots.
 // -----------------------------------------------------------------------------
 

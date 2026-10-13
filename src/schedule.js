@@ -7,6 +7,7 @@
 // kept: some sources return several years.
 // -----------------------------------------------------------------------------
 
+import { text } from './i18n.js';
 import { addDays, daysBetween, isDate } from './time.js';
 
 export const HISTORY_DAYS = 35;
@@ -135,4 +136,14 @@ export function typesOf(collections) {
   return [...new Set(collections.map((collection) => collection.type))].sort((a, b) =>
     a.localeCompare(b),
   );
+}
+
+/**
+ * @description The display name of a schedule slot.
+ * @param {{ slot: string, name: string|null }} slot - Normalized slot (config.js).
+ * @param {string} language - Language code.
+ * @returns {string} The name the user gave, or "Schedule <n>".
+ */
+export function scheduleName(slot, language) {
+  return slot.name || text('scheduleDefaultName', language, { slot: slot.slot });
 }

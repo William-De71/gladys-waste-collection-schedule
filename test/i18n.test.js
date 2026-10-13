@@ -120,7 +120,7 @@ test('READMEs: four languages, navigation, badges, cover, same structure, images
       text,
       /actions\/workflow\/status\/William-De71\/gladys-waste-collection-schedule\/release\.yml/,
     );
-    assert.match(text, /Gladys-%E2%89%A5%205\.1\.1/);
+    assert.match(text, /Gladys-%E2%89%A5%205\.2\.0/);
     assert.match(text, /!\[[^\]]+\]\(cover\.jpg\)/, `${README[language]} shows the cover`);
     assert.ok(
       text.includes(`(docs/assets/widgets.${language}.png)`),
