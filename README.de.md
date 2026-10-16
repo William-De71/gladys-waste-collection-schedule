@@ -128,7 +128,7 @@ Eine Erinnerung kommt einmal pro Abholung, auch nach einem Neustart, bis zu 3 St
 | `number_1` … `number_3`     | string |          | Hausnummer                                                                                                                               |
 | `source_1` … `source_3`     | string |          | Quelle (optional): Titel einer Quelle oder Modulname, z. B. `AWM München`; leer, über den Ort gefunden                                   |
 | `url_1` … `url_3`           | string |          | ICS-Link (optional): allein die Quelle `ics`                                                                                             |
-| `args_1` … `args_3`         | string |          | Erweiterte Parameter: `schlüssel=wert; schlüssel=wert` (JSON wird weiter gelesen); sie haben Vorrang vor den Feldern oben                |
+| `args_1` … `args_3`         | string |          | Erweiterte Parameter: `schlüssel=wert; schlüssel=wert`; sie haben Vorrang vor den Feldern oben                                           |
 | `rename`                    | string |          | `Original=Neu; …`                                                                                                                        |
 | `hide`                      | string |          | `Art; Art`                                                                                                                               |
 | `reminder_time`             | select | `19:00`  | Erinnerung am Abend, 16:00 bis 22:00 oder `off`                                                                                          |

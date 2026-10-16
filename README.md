@@ -128,7 +128,7 @@ A reminder fires once per collection, even across restarts, up to 3 hours late i
 | `number_1` … `number_3`     | string |         | Number                                                                                                                         |
 | `source_1` … `source_3`     | string |         | Source (optional): title of a source or module name, e.g. `Grand Besançon Métropole`; empty, found from the town               |
 | `url_1` … `url_3`           | string |         | ICS link (optional): alone, the `ics` source                                                                                   |
-| `args_1` … `args_3`         | string |         | Advanced parameters: `key=value; key=value` (JSON still read); they win over the fields above                                  |
+| `args_1` … `args_3`         | string |         | Advanced parameters: `key=value; key=value`; they win over the fields above                                                    |
 | `rename`                    | string |         | `Original=New; …`                                                                                                              |
 | `hide`                      | string |         | `Type; Type`                                                                                                                   |
 | `reminder_time`             | select | `19:00` | evening reminder, 16:00 to 22:00 or `off`                                                                                      |
