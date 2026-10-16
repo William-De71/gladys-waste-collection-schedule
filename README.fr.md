@@ -128,7 +128,7 @@ Un rappel est envoyé une fois par collecte, même après un redémarrage, jusqu
 | `number_1` … `number_3`     | string |         | Numéro                                                                                                                                                |
 | `source_1` … `source_3`     | string |         | Source (facultatif) : titre d’une source ou nom de module, par ex. `Grand Besançon Métropole` ; vide, trouvée à partir de la commune                  |
 | `url_1` … `url_3`           | string |         | Lien ICS (facultatif) : seul, la source `ics`                                                                                                         |
-| `args_1` … `args_3`         | string |         | Paramètres avancés : `clé=valeur; clé=valeur` (JSON encore lu) ; ils l’emportent sur les champs ci-dessus                                             |
+| `args_1` … `args_3`         | string |         | Paramètres avancés : `clé=valeur; clé=valeur` ; ils l’emportent sur les champs ci-dessus                                                              |
 | `rename`                    | string |         | `Original=Nouveau; …`                                                                                                                                 |
 | `hide`                      | string |         | `Type; Type`                                                                                                                                          |
 | `reminder_time`             | select | `19:00` | rappel du soir, de 16 h à 22 h ou `off`                                                                                                               |

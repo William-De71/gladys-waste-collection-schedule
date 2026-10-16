@@ -128,7 +128,7 @@ Un aviso se envía una vez por recogida, incluso tras un reinicio, hasta 3 horas
 | `number_1` … `number_3`     | string |             | Número                                                                                                                                           |
 | `source_1` … `source_3`     | string |             | Fuente (opcional): título de una fuente o nombre de módulo, p. ej. `Grand Besançon Métropole`; vacía, se encuentra por el municipio              |
 | `url_1` … `url_3`           | string |             | Enlace ICS (opcional): solo, la fuente `ics`                                                                                                     |
-| `args_1` … `args_3`         | string |             | Parámetros avanzados: `clave=valor; clave=valor` (JSON aún se lee); prevalecen sobre los campos de arriba                                        |
+| `args_1` … `args_3`         | string |             | Parámetros avanzados: `clave=valor; clave=valor`; prevalecen sobre los campos de arriba                                                          |
 | `rename`                    | string |             | `Original=Nuevo; …`                                                                                                                              |
 | `hide`                      | string |             | `Tipo; Tipo`                                                                                                                                     |
 | `reminder_time`             | select | `19:00`     | aviso de la tarde, de 16:00 a 22:00 u `off`                                                                                                      |
