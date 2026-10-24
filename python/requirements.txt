@@ -2,7 +2,7 @@
 # `requirements` of its manifest.json, plus what its sources import).
 # Pinned: the image must build the same tomorrow. Dependabot updates them.
 beautifulsoup4==4.15.0
-certifi==2026.7.22
+certifi==2026.10.19
 curl_cffi==0.16.3
 icalendar==7.3.0
 icalevents==0.3.1
