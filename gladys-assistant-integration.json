@@ -8,8 +8,8 @@
     "de": "Abfuhrtermine aus fast 1.000 Quellen: Kalender, Erinnerungen und ein Widget.",
     "es": "Fechas de recogida de residuos de casi 1.000 fuentes: calendario, avisos, widget."
   },
-  "version": "0.3.0",
-  "docker_image": "ghcr.io/william-de71/gladys-waste-collection-schedule:0.3.0",
+  "version": "0.3.1",
+  "docker_image": "ghcr.io/william-de71/gladys-waste-collection-schedule:0.3.1",
   "gladys_version": ">=5.2.0",
   "cover_image": "https://raw.githubusercontent.com/William-De71/gladys-waste-collection-schedule/main/cover.jpg",
   "categories": ["services"],
