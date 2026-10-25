@@ -1,6 +1,6 @@
 {
   "name": "gladys-waste-collection-schedule",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "description": "External Gladys Assistant integration for waste collection dates, from the nearly 1,000 sources of Waste Collection Schedule: calendar, scenes and a dashboard widget.",
   "homepage": "https://github.com/William-De71/gladys-waste-collection-schedule",
