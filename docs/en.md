@@ -16,7 +16,7 @@ The dates come from [Waste Collection Schedule](https://github.com/mampfes/hacs_
 
 ## Requirements
 
-- Gladys Assistant 5.2.0 or later (calendar integrations).
+- Gladys Assistant 5.3.0 or later (calendar integrations).
 - Your Gladys reaches the internet.
 - A source for your address: most towns are found from their name alone. Check the [list of the sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), or use the **Find a source** button of the configuration page. No source for your town? Paste the calendar link (`.ics`, `webcal://`) your town hall or operator publishes into **ICS link**.
 

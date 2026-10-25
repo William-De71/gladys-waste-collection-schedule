@@ -5,7 +5,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/William-De71/gladys-waste-collection-schedule?sort=semver)](https://github.com/William-De71/gladys-waste-collection-schedule/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/William-De71/gladys-waste-collection-schedule/release.yml?branch=main&label=CI)](https://github.com/William-De71/gladys-waste-collection-schedule/actions/workflows/release.yml)
-[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.2.0-2f6fb5)](https://gladysassistant.com)
+[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.3.0-2f6fb5)](https://gladysassistant.com)
 
 ![Waste Collection Schedule for Gladys Assistant](cover.jpg)
 
@@ -106,7 +106,7 @@ A reminder fires once per collection, even across restarts, up to 3 hours late i
 
 ## Requirements
 
-- Gladys Assistant **5.2.0 or later** (calendar integrations; older instances cannot install the integration).
+- Gladys Assistant **5.3.0 or later** (calendar integrations, catalog keywords and countries of Gladys 5.3; older instances cannot install the integration).
 - Internet access from Gladys.
 - A source for your address: see the [list of the sources](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), or the **ics** source with a calendar link.
 

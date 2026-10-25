@@ -5,7 +5,7 @@
 [![Licencia: Apache-2.0](https://img.shields.io/badge/licencia-Apache--2.0-blue.svg)](LICENSE)
 [![Última versión](https://img.shields.io/github/v/release/William-De71/gladys-waste-collection-schedule?sort=semver)](https://github.com/William-De71/gladys-waste-collection-schedule/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/William-De71/gladys-waste-collection-schedule/release.yml?branch=main&label=CI)](https://github.com/William-De71/gladys-waste-collection-schedule/actions/workflows/release.yml)
-[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.2.0-2f6fb5)](https://gladysassistant.com)
+[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.3.0-2f6fb5)](https://gladysassistant.com)
 
 ![Waste Collection Schedule para Gladys Assistant](cover.jpg)
 
@@ -106,7 +106,7 @@ Un aviso se envía una vez por recogida, incluso tras un reinicio, hasta 3 horas
 
 ## Requisitos
 
-- Gladys Assistant **5.2.0 o posterior** (integraciones de calendario; las instancias más antiguas no pueden instalar la integración).
+- Gladys Assistant **5.3.0 o posterior** (integraciones de calendario, palabras clave y países del catálogo de Gladys 5.3; las instancias más antiguas no pueden instalar la integración).
 - Acceso a Internet desde Gladys.
 - Una fuente para su dirección: vea la [lista de fuentes](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers), o la fuente **ics** con un enlace de calendario.
 

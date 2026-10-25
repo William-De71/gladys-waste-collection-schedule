@@ -16,7 +16,7 @@ Las fechas proceden de [Waste Collection Schedule](https://github.com/mampfes/ha
 
 ## Requisitos
 
-- Gladys Assistant 5.2.0 o posterior (integraciones de calendario).
+- Gladys Assistant 5.3.0 o posterior (integraciones de calendario).
 - Su Gladys tiene acceso a Internet.
 - Una fuente para su dirección: la mayoría de los municipios se encuentran solo con su nombre. Consulte la [lista de fuentes](https://github.com/mampfes/hacs_waste_collection_schedule#supported-service-providers) o use el botón **Buscar una fuente** de la página de configuración. ¿No hay fuente para su municipio? Pegue el enlace de calendario (`.ics`, `webcal://`) que publique su ayuntamiento o su operador en **Enlace ICS**.
 

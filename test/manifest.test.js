@@ -45,9 +45,10 @@ test('one version everywhere, image of this repository', () => {
 });
 
 test('store rules: type, Gladys version, transports, categories, descriptions', () => {
-  // A calendar integration needs 5.2.0 (code-enforced by the store indexer).
+  // A calendar integration needs 5.2.0, the catalog keywords 5.3.0 (both
+  // code-enforced by the store indexer).
   assert.equal(manifest.type, 'calendar');
-  assert.equal(manifest.gladys_version, '>=5.2.0');
+  assert.equal(manifest.gladys_version, '>=5.3.0');
   // Nothing to ask per user: every user just enables the integration.
   assert.equal(manifest.account_schema, undefined);
   // Every source is a web site or an API: nothing on the local network.
@@ -174,4 +175,18 @@ test('widget settings match the code', () => {
   );
   assert.equal(settings.count.default, String(DEFAULT_COUNT));
   assert.equal(settings.show_refresh.default, true);
+});
+
+test('catalog fields of Gladys 5.3: search keywords, available worldwide', () => {
+  assert.equal(manifest.gladys_version, '>=5.3.0');
+  assert.ok(Array.isArray(manifest.keywords), 'keywords');
+  assert.ok(manifest.keywords.length >= 1 && manifest.keywords.length <= 10, '1 to 10 keywords');
+  for (const keyword of manifest.keywords) {
+    assert.ok(keyword.length <= 30 && keyword.trim().length >= 2, keyword);
+  }
+  const normalized = manifest.keywords.map((keyword) => keyword.trim().toLowerCase());
+  assert.equal(new Set(normalized).size, normalized.length, 'unique once trimmed and lowercased');
+  assert.ok(!normalized.includes(manifest.name.toLowerCase()), 'the name is already searched');
+  // No `countries`: usable anywhere, the catalog shows it in every country.
+  assert.equal(manifest.countries, undefined);
 });
