@@ -19,8 +19,8 @@ FROM node:24-trixie-slim AS python
 
 # Upstream release. Updated by .github/workflows/wcs-update.yml (version and
 # checksum of the release archive together).
-ARG WCS_VERSION=2.35.0
-ARG WCS_SHA256=87a09bf244e8db50175dbf3e56fec62a6acd2030ef998803dde5f5c754f5d8c9
+ARG WCS_VERSION=2.36.0
+ARG WCS_SHA256=21c02394f4efe908fc3e61a3a9c826d988c2eb3b9cf48ab1940ede3f777a6826
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 python3-venv ca-certificates curl \
