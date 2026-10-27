@@ -30,6 +30,11 @@ updates:
     groups:
       python-packages:
         patterns: ['*']
+    ignore:
+      # icalevents 0.3.1 requires python-dateutil<3.0: lift this once it
+      # accepts 3.x, or the image no longer builds.
+      - dependency-name: python-dateutil
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
