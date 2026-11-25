@@ -203,7 +203,7 @@ flowchart LR
 - El título de la pull request se convierte en el commit squash y, por tanto, en la línea del changelog: escríbalo en inglés, para el usuario (`feat(widgets): …`). `pr-title.yml` lo comprueba. No edite nunca `CHANGELOG.md` a mano.
 - La imagen existe antes de que `main` anuncie su versión (el store indexa `main`).
 - La 1.0.0 es una decisión manual: Actions → Release → Run workflow, `release-as: 1.0.0`. `dry-run` muestra la versión y el changelog sin publicar nada.
-- **`main` protegida**: la release empuja un commit a `main`. Con una protección de rama o un ruleset, permita que GitHub Actions la omita (o use una GitHub App); si no, la release se detiene tras la imagen.
+- **Rama protegida**: unos rulesets exigen una pull request en `main` y bloquean las etiquetas `v*`; solo pasan el mantenedor y las deploy keys. La publicación hace push con la deploy key del entorno `release` (secreto `RELEASE_DEPLOY_KEY`, solo `main`): una ejecución lanzada desde otra rama nunca la obtiene. `build.yml` y `github-release.yml` no arrancan con una etiqueta: la publicación los llama, o lánzelos a mano (Actions → Run workflow, con `version` para la imagen) para terminar una publicación.
 - **Actualizaciones de Waste Collection Schedule**: `wcs-update.yml` abre una pull request con cada versión del proyecto de origen (active Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests»). Una pull request abierta por GitHub Actions no lanza ningún flujo: ciérrela y vuelva a abrirla para lanzar la CI.
 - Tras la primera release, haga público el paquete: Package settings → Change visibility → Public.
 
